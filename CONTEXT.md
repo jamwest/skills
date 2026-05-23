@@ -39,3 +39,7 @@ _Avoid_: Default mode, offline mode
 **Doc-anchored mode**:
 A skill operating against a repo's own documentation (`CONTEXT.md`, `docs/adr/`, `docs/agents/`). The repo's documents are the source of truth.
 _Avoid_: Context mode, anchored mode
+
+**Workflow conventions**:
+The team-specific rules for branching, committing, merging, and PR titling, captured in `docs/agents/workflow.md` during `init`. Skills that create branches, write commits, or open PRs read from here to operate consistently with the team's standards.
+_Avoid_: Git conventions, team standards, coding standards

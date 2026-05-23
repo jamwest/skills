@@ -1,6 +1,6 @@
 ---
 name: init
-description: Sets up an `## Agent skills` block in AGENTS.md/CLAUDE.md and `docs/agents/` so skills know this repo's issue tracker (GitHub, Jira, or local markdown), code host (GitHub, Bitbucket, GitLab, etc.), and domain doc layout. Run before first use of `issues`, `prd`, `tdd`, `deepen`, or `fleet` — or if those skills appear to be missing context about the issue tracker, code host, or domain docs.
+description: Sets up an `## Agent skills` block in AGENTS.md/CLAUDE.md and `docs/agents/` so skills know this repo's issue tracker (GitHub, Jira, or local markdown), code host (GitHub, Bitbucket, GitLab, etc.), workflow conventions (branch naming, commit format, merge strategy, PR title format), and domain doc layout. Run before first use of `issues`, `prd`, `tdd`, `deepen`, or `fleet` — or if those skills appear to be missing context about the issue tracker, code host, or domain docs.
 disable-model-invocation: true
 ---
 
@@ -10,6 +10,7 @@ Scaffold the per-repo configuration that the engineering skills assume:
 
 - **Issue tracker** — where issues live (local markdown by default; GitHub Issues and Jira are also supported out of the box)
 - **Code host** — where the repository lives and how to open PRs/MRs (detected from `git remote`)
+- **Workflow conventions** — branch naming, commit message format, merge strategy, and PR title format (detected from config files and git history)
 - **Domain docs** — where `CONTEXT.md` and ADRs live, and the consumer rules for reading them
 
 This is a prompt-driven skill, not a deterministic script. Explore, present what you found, confirm with the user, then write.
@@ -29,7 +30,7 @@ Look at the current repo to understand its starting state. Read whatever exists;
 
 ### 2. Present findings and ask
 
-Summarise what's present and what's missing. Then walk the user through the three decisions **one at a time** — present a section, get the user's answer, then move to the next. Don't dump them all at once.
+Summarise what's present and what's missing. Then walk the user through the four decisions **one at a time** — present a section, get the user's answer, then move to the next. Don't dump them all at once.
 
 Assume the user does not know what these terms mean. Each section starts with a short explainer (what it is, why these skills need it, what changes if they pick differently). Then show the choices and the default.
 
@@ -55,7 +56,27 @@ Detect from `git remote -v` and propose the match. If no remote is present or th
 - **GitLab** — code lives on GitLab.com or a self-hosted instance (uses the `glab` CLI)
 - **No remote / other** — ask the user to describe; the skill will record it as freeform prose
 
-**Section C — Domain docs.**
+**Section C — Workflow conventions.**
+
+> Explainer: "Workflow conventions" are the team rules for branching, committing, and merging. Skills that create branches, write commits, or open pull requests read `docs/agents/workflow.md` to match your team's standards — so they don't open PRs with the wrong title format or name branches in a way that breaks your CI or review process.
+
+Detect first, then confirm, then fill gaps:
+
+- Scan for `.commitlintrc`, `commitlint.config.js`, `commitlint.config.ts`, `.commitlintrc.json`, `.commitlintrc.yml`, and the `commitlint` key in `package.json` — these reveal the commit message format.
+- Check `CONTRIBUTING.md` and `.github/CONTRIBUTING.md` for branch naming rules, PR conventions, or merge strategy guidance.
+- Sample `git log --oneline -20` and `git branch -a` to infer patterns already in use (e.g. `feat/`, `fix/`, `username/description`).
+- Present what you found as a proposed draft, then ask the user to confirm or correct each field.
+- Merge strategy **always requires an explicit answer** — it's a code host setting, not stored in the filesystem. Propose squash-and-delete-branch as the default.
+
+Capture all five fields as freeform prose (not a fixed enum):
+
+- **Base branch** — the default PR target; detect from `git symbolic-ref refs/remotes/origin/HEAD` or assume `main`. Note any other long-lived branches (e.g. `develop`, `release/*`) but don't try to describe the full release flow — that's a fleet concern.
+- **Branch naming** — e.g. `feat/<slug>`, `fix/<slug>`, `<username>/<description>`, or no convention
+- **Commit message format** — e.g. Conventional Commits `<type>(<scope>): <description>`, gitmoji, or freeform
+- **Merge strategy** — squash / rebase / merge commit; note whether to delete the branch after merge
+- **PR title format** — e.g. mirrors commit message format, `PROJ-1234 | <description>`, or freeform
+
+**Section D — Domain docs.**
 
 > Explainer: Some skills (`deepen`, `tdd`) read a `CONTEXT.md` file to learn the project's domain language, and `docs/adr/` for past architectural decisions. They need to know whether the repo has one global context or multiple (e.g. a monorepo with separate frontend/backend contexts) so they look in the right place.
 
@@ -69,7 +90,7 @@ Confirm the layout:
 Show the user a draft of:
 
 - The `## Agent skills` block to add to whichever of `CLAUDE.md` / `AGENTS.md` is being edited (see step 4 for selection rules)
-- The contents of `docs/agents/issue-tracker.md`, `docs/agents/code-host.md`, and `docs/agents/domain.md`
+- The contents of `docs/agents/issue-tracker.md`, `docs/agents/code-host.md`, `docs/agents/workflow.md`, and `docs/agents/domain.md`
 
 Let them edit before writing.
 
@@ -98,6 +119,10 @@ The block:
 
 [one-line summary of code host — e.g. "GitHub" or "Bitbucket"]. See `docs/agents/code-host.md`.
 
+### Workflow conventions
+
+[one-line summary — e.g. "Conventional Commits, feat/* branches, squash merge"]. See `docs/agents/workflow.md`.
+
 ### Domain docs
 
 [one-line summary of layout — "single-context" or "multi-context"]. See `docs/agents/domain.md`.
@@ -111,10 +136,11 @@ Then write the docs files using the seed templates in this skill folder as a sta
 - [code-host-github.md](./code-host-github.md) — GitHub code host
 - [code-host-bitbucket.md](./code-host-bitbucket.md) — Bitbucket code host
 - [code-host-gitlab.md](./code-host-gitlab.md) — GitLab code host
+- [workflow.md](./workflow.md) — workflow conventions (universal; not per-host)
 - [domain.md](./domain.md) — domain doc consumer rules + layout
 
 For "other" issue trackers or code hosts, write the relevant `docs/agents/` file from scratch using the user's description.
 
 ### 5. Done
 
-Tell the user the setup is complete and which engineering skills will now read from these files. Mention they can edit `docs/agents/*.md` directly later — re-running this skill is only necessary if they want to switch issue trackers, change code host, or restart from scratch.
+Tell the user the setup is complete and which engineering skills will now read from these files. Mention they can edit `docs/agents/*.md` directly later — re-running this skill is only necessary if they want to switch issue trackers, change code host, change workflow conventions, or restart from scratch.
