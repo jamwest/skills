@@ -1,6 +1,7 @@
 ---
 name: grill
 description: Interview the user relentlessly about a plan or design until reaching shared understanding, resolving each branch of the decision tree one at a time. Operates in two modes — freeform (no repo context) or doc-anchored (grills against CONTEXT.md, ADRs, and docs/agents/ when present). Use when the user wants to stress-test a plan, challenge their thinking, poke holes in a design, or says "grill me". Also triggers for "challenge my thinking", "stress-test this", "ask me hard questions about X", or when starting work on a feature and wanting to validate the approach against existing decisions.
+subagent-role: interactive
 ---
 
 # Grill
