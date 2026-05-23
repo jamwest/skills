@@ -30,8 +30,8 @@ This means `init` has already been run. Trust the config; don't re-detect.
 
 Before the first question, silently check each doc against its format spec:
 
-- `CONTEXT.md` — see [CONTEXT-FORMAT.md](./context-format.md). Is it present? Does it have a `## Language` section with at least one term?
-- `docs/adr/` — see [ADR-FORMAT.md](./adr-format.md). Does the directory exist? Are files named correctly (`0001-slug.md`)?
+- `CONTEXT.md` — see [context-format.md](./context-format.md). Is it present? Does it have a `## Language` section with at least one term?
+- `docs/adr/` — see [adr-format.md](./adr-format.md). Does the directory exist? Are files named correctly (`0001-slug.md`)?
 
 For each doc that is **missing, empty, or malformed**, surface it before the first question:
 
