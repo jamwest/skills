@@ -1,7 +1,8 @@
 ---
-name: init
-description: Sets up an `## Agent skills` block in AGENTS.md/CLAUDE.md and `docs/agents/` so skills know this repo's issue tracker (GitHub, Jira, or local markdown), code host (GitHub, Bitbucket, GitLab, etc.), workflow conventions (branch naming, commit format, merge strategy, PR title format), and domain doc layout. Run before first use of `issues`, `prd`, `tdd`, `deepen`, or `fleet` — or if those skills appear to be missing context about the issue tracker, code host, or domain docs.
+name: setup-agent-context
+description: Sets up an `## Agent skills` block in AGENTS.md/CLAUDE.md and `docs/agents/` so skills know this repo's issue tracker (GitHub, Jira, or local markdown), code host (GitHub, Bitbucket, GitLab, etc.), workflow conventions (branch naming, commit format, merge strategy, PR title format), and domain doc layout. Run before first use of `break-it-down`, `blueprint`, `implement`, `deepen`, or `fleet-command` — or if those skills appear to be missing context about the issue tracker, code host, or domain docs.
 disable-model-invocation: true
+subagent-role: interactive
 ---
 
 # Setup Agent Docs
@@ -36,7 +37,7 @@ Assume the user does not know what these terms mean. Each section starts with a 
 
 **Section A — Issue tracker.**
 
-> Explainer: The "issue tracker" is where issues live for this repo. Skills like `fleet`, `prd`, and `issues` read from and write to it — they need to know whether to call `gh issue create`, use Jira via the Atlassian MCP, write a markdown file under `.scratch/`, or follow some other workflow you describe. Pick the place you actually track work for this repo.
+> Explainer: The "issue tracker" is where issues live for this repo. Skills like `fleet-command`, `blueprint`, and `break-it-down` read from and write to it — they need to know whether to call `gh issue create`, use Jira via the Atlassian MCP, write a markdown file under `.scratch/`, or follow some other workflow you describe. Pick the place you actually track work for this repo.
 
 Default posture: local markdown unless the user says otherwise. If a `git remote` points at GitHub and the user seems to be tracking work there, surface GitHub Issues as a suggestion. If a Jira domain is discoverable (from environment variables, a `.jira` config file, or the user mentions it), surface Jira as a suggestion. Always confirm before writing.
 
@@ -47,7 +48,7 @@ Default posture: local markdown unless the user says otherwise. If a `git remote
 
 **Section B — Code host.**
 
-> Explainer: The "code host" is where the repository lives. This is separate from the issue tracker — it affects how skills open pull requests or merge requests, navigate branches, and fetch CI status. Skills like `review` and `fleet` need to know this to call the right CLI.
+> Explainer: The "code host" is where the repository lives. This is separate from the issue tracker — it affects how skills open pull requests or merge requests, navigate branches, and fetch CI status. Skills like `review` and `fleet-command` need to know this to call the right CLI.
 
 Detect from `git remote -v` and propose the match. If no remote is present or the host is ambiguous, ask.
 
@@ -78,7 +79,7 @@ Capture all five fields as freeform prose (not a fixed enum):
 
 **Section D — Domain docs.**
 
-> Explainer: Some skills (`deepen`, `tdd`) read a `CONTEXT.md` file to learn the project's domain language, and `docs/adr/` for past architectural decisions. They need to know whether the repo has one global context or multiple (e.g. a monorepo with separate frontend/backend contexts) so they look in the right place.
+> Explainer: Some skills (`deepen`, `implement`) read a `CONTEXT.md` file to learn the project's domain language, and `docs/adr/` for past architectural decisions. They need to know whether the repo has one global context or multiple (e.g. a monorepo with separate frontend/backend contexts) so they look in the right place.
 
 Confirm the layout:
 

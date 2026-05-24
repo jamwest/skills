@@ -14,13 +14,13 @@ Explores the codebase — reads files, maps structure, identifies patterns, surf
 Gathers external knowledge — web search, documentation, third-party APIs. May use browser access. Degrades gracefully if no browser is available; pair with a `scout` for the codebase half of any research task.
 
 **`worker`**
-Writes code, edits files, runs tests, makes commits. The agent that does the actual implementation work. Should receive a clear, scoped brief from an `orchestrator` before starting. Examples: `tdd`, the implementation phase of most skills.
+Writes code, edits files, runs tests, makes commits. The agent that does the actual implementation work. Should receive a clear, scoped brief from an `orchestrator` before starting. Examples: `implement`, the implementation phase of most skills.
 
 **`reviewer`**
 Reads output (code, PRDs, plans) and produces structured feedback. Does not edit files — only comments. Example: `review`.
 
 **`interactive`**
-Multi-turn conversation with the user. Doesn't fit neatly into the automated pipeline — intended for sessions where the human is in the loop throughout. Examples: `grill`, `skill-forge`, `prd`.
+Multi-turn conversation with the user. Doesn't fit neatly into the automated pipeline — intended for sessions where the human is in the loop throughout. Examples: `grill`, `skill-forge`, `blueprint`.
 
 ## Picking a role
 
