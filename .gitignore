@@ -1,0 +1,9 @@
+/mps
+.DS_Store
+.ignore/
+
+# Skillset working state — blueprints and local-tracker scratch files, not project docs.
+.claude/blueprints/
+.claude/scratch/
+.claude/ui/
+.claude/pr/
