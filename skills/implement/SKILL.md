@@ -1,8 +1,8 @@
 ---
 name: implement
-description: Implement a task from the issue tracker using TDD (red-green-refactor). Use after /break-it-down when starting work on a subtask — accepts an issue key (PROJ-124, GH-42) or a local .scratch path. The final step in the pipeline: grill → blueprint → break-it-down → implement.
+description: Implement a task from the issue tracker using TDD (red-green-refactor), then run one bounded review-and-fix round before handing off. Use after /break-it-down when starting work on a subtask — accepts an issue key (PROJ-124, GH-42) or a local .claude/scratch path. The final step in the pipeline: grill → blueprint → break-it-down → implement.
 subagent-role: worker
-argument-hint: "issue key or path (e.g. PROJ-124, GH-42, .scratch/slug/issues/01-task.md)"
+argument-hint: "issue key or path (e.g. PROJ-124, GH-42, .claude/scratch/slug/issues/01-task.md)"
 ---
 
 # Implement
@@ -10,20 +10,25 @@ argument-hint: "issue key or path (e.g. PROJ-124, GH-42, .scratch/slug/issues/01
 Take a task from the issue tracker and implement it using test-driven development. This is the
 final step in the pipeline: `grill → blueprint → break-it-down → implement`.
 
-The only output is working, tested code. Issue management (closing the issue, opening a PR,
-updating status) is out of scope — a future `/ship` skill handles that.
+The output is working, tested code plus one bounded review-and-fix round (step 6) — not a loop
+until clean. Issue management (closing the issue, opening a PR, updating status) is out of scope
+and stays manual — see the end of step 6.
 
 ## Process
 
 ### 1. Read repo context
 
-Check for an `## Agent skills` block in `AGENTS.md` or `CLAUDE.md` at the repo root. If found, read:
+Check whether these exist at the repo root, and read whichever are present:
 
 - `docs/agents/issue-tracker.md` — needed to fetch the task description
+- Also note the current `git rev-parse HEAD` before making any changes — call it `<start-sha>`.
+  Step 6's review round diffs against this point.
 - `docs/agents/domain.md` — confirms whether `CONTEXT.md` is single or multi-context
 - `CONTEXT.md` — read for domain vocabulary; use it consistently in all identifiers and test names
+- `CONTRIBUTING.md` — its "Coding standards" section records this repo's actual style, lint, and
+  architectural conventions; write code that matches it rather than inventing your own patterns
 
-If the `## Agent skills` block is absent, continue — domain docs are optional but preferred.
+If none exist, continue — domain docs are optional but preferred.
 
 ### 2. Resolve the task
 
@@ -31,8 +36,8 @@ Check whether an argument was passed:
 
 - **Issue key** (`PROJ-124`, `GH-42`) — fetch the full task from the configured tracker. Extract
   title, description, and acceptance criteria.
-- **Local path** (starts with `.scratch/` or ends in `.md`) — read that file directly. Extract
-  title and description.
+- **Local path** (starts with `.claude/scratch/` or ends in `.md`) — read that file directly.
+  Extract title and description.
 - **Freetext** — treat it directly as the task description.
 - **No argument** — ask: _"What are we implementing? Paste a task description or give me an
   issue key."_
@@ -110,6 +115,41 @@ After all acceptance criteria are covered and all tests pass, look for
 **Never refactor while RED.** Get to GREEN first, always.
 
 Run the full test suite after each refactor step.
+
+If this cycle established or reinforced a real pattern that isn't in `CONTRIBUTING.md`'s Coding
+standards section yet — a deliberate architectural choice, not an incidental one — offer to add
+it before moving on: _"Want me to record 'X' as a coding standard?"_ Apply this inline, like
+`grill` does for `CONTEXT.md`; don't batch it to the end of the task.
+
+### 6. Review once, fix once
+
+Once refactoring is done and the full suite passes, spawn a fresh Agent-tool subagent to run
+`/review`'s process against the work so far. Independence is the point — don't just follow
+review's steps inline in this same session, which holds every assumption that shaped the code.
+
+Brief the subagent explicitly, since none of this is otherwise discoverable:
+
+- **Fixed point**: `<start-sha>` from step 1. This task hasn't been committed, so tell the
+  subagent to diff with `git diff <start-sha>` (working tree included) instead of review's usual
+  three-dot `...HEAD` form — there's no merge-base to diff against yet.
+- **Spec**: the issue/blueprint content already fetched in step 2. Skip review's own spec-source
+  discovery entirely — the spec is already known.
+
+From the two reports that come back:
+
+- **Fix directly**: hard violations of a documented standard, and any Spec finding (missing,
+  partial, or wrong against what was asked for) — the categories review itself distinguishes
+  from judgement calls.
+- **Leave for the user**: baseline-smell findings (always judgement calls) and any Standards
+  finding that isn't a hard violation. List these in the final report; don't act on them.
+
+After fixing, re-run the full test suite, then run the same review **one more time** against the
+same fixed point to confirm the fixes landed and didn't introduce a new hard violation. Stop here
+regardless of outcome — this is one bounded round, not a loop until clean.
+
+Report: what got fixed, what review still flags (with its citations), and that opening the PR
+(`/pr-description`), cleaning up history (`/tidy-branch`), and closing the issue stay the user's
+call, made one at a time — this skill doesn't chain into any of them on its own.
 
 ## Checklist per cycle
 
