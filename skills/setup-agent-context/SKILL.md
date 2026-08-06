@@ -1,6 +1,6 @@
 ---
 name: setup-agent-context
-description: Sets up an `## Agent skills` block in AGENTS.md/CLAUDE.md and `docs/agents/` so skills know this repo's issue tracker (GitHub, Jira, or local markdown), code host (GitHub, Bitbucket, GitLab, etc.), workflow conventions (branch naming, commit format, merge strategy, PR title format), and domain doc layout. Run before first use of `break-it-down`, `blueprint`, `implement`, `deepen`, or `fleet-command` — or if those skills appear to be missing context about the issue tracker, code host, or domain docs.
+description: Sets up an `## Agent skills` block in AGENTS.md/CLAUDE.md, `docs/agents/`, and `CONTRIBUTING.md` so skills know this repo's issue tracker (GitHub, Jira, or local markdown), code host (GitHub, Bitbucket, GitLab, etc.), workflow conventions (branch naming, commit format, merge strategy, PR title format), coding standards (style, lint, architectural patterns), and domain doc layout. Run before first use of `break-it-down`, `blueprint`, `implement`, `deepen`, `wayfinder`, or `fleet-command` — or if those skills appear to be missing context about the issue tracker, code host, or domain docs.
 disable-model-invocation: true
 subagent-role: interactive
 ---
@@ -11,7 +11,8 @@ Scaffold the per-repo configuration that the engineering skills assume:
 
 - **Issue tracker** — where issues live (local markdown by default; GitHub Issues and Jira are also supported out of the box)
 - **Code host** — where the repository lives and how to open PRs/MRs (detected from `git remote`)
-- **Workflow conventions** — branch naming, commit message format, merge strategy, and PR title format (detected from config files and git history)
+- **Workflow conventions** — branch naming, commit message format, merge strategy, and PR title format (detected from config files and git history), captured in `CONTRIBUTING.md`
+- **Coding standards** — style, lint rules, and architectural patterns (detected from linter/formatter config where they exist), also captured in `CONTRIBUTING.md`
 - **Domain docs** — where `CONTEXT.md` and ADRs live, and the consumer rules for reading them
 
 This is a prompt-driven skill, not a deterministic script. Explore, present what you found, confirm with the user, then write.
@@ -24,24 +25,26 @@ Look at the current repo to understand its starting state. Read whatever exists;
 
 - `git remote -v` and `.git/config` — is this a GitHub repo? Bitbucket repo? GitLab? Which host?
 - `AGENTS.md` and `CLAUDE.md` at the repo root — does either exist? Is there already an `## Agent skills` section in either?
+- `CONTRIBUTING.md` (and `.github/CONTRIBUTING.md`) at the repo root — does it already exist? Any existing content stays; new sections get appended, never overwritten.
+- `.eslintrc*`, `.prettierrc*`, `.editorconfig`, and similar linter/formatter config — signals for the Coding standards section.
 - `CONTEXT.md` and `CONTEXT-MAP.md` at the repo root
 - `docs/adr/` and any `src/*/docs/adr/` directories
 - `docs/agents/` — does this skill's prior output already exist?
-- `.scratch/` — sign that a local-markdown issue tracker convention is already in use
+- `.claude/scratch/` — sign that a local-markdown issue tracker convention is already in use
 
 ### 2. Present findings and ask
 
-Summarise what's present and what's missing. Then walk the user through the four decisions **one at a time** — present a section, get the user's answer, then move to the next. Don't dump them all at once.
+Summarise what's present and what's missing. Then walk the user through the five decisions **one at a time** — present a section, get the user's answer, then move to the next. Don't dump them all at once.
 
 Assume the user does not know what these terms mean. Each section starts with a short explainer (what it is, why these skills need it, what changes if they pick differently). Then show the choices and the default.
 
 **Section A — Issue tracker.**
 
-> Explainer: The "issue tracker" is where issues live for this repo. Skills like `fleet-command`, `blueprint`, and `break-it-down` read from and write to it — they need to know whether to call `gh issue create`, use Jira via the Atlassian MCP, write a markdown file under `.scratch/`, or follow some other workflow you describe. Pick the place you actually track work for this repo.
+> Explainer: The "issue tracker" is where issues live for this repo. Skills like `fleet-command`, `blueprint`, `break-it-down`, and `wayfinder` read from and write to it — they need to know whether to call `gh issue create`, use Jira via the Atlassian MCP, write a markdown file under `.claude/scratch/`, or follow some other workflow you describe. Pick the place you actually track work for this repo.
 
 Default posture: local markdown unless the user says otherwise. If a `git remote` points at GitHub and the user seems to be tracking work there, surface GitHub Issues as a suggestion. If a Jira domain is discoverable (from environment variables, a `.jira` config file, or the user mentions it), surface Jira as a suggestion. Always confirm before writing.
 
-- **Local markdown** (default) — issues live as files under `.scratch/<feature>/` in this repo (good for solo projects or repos without a remote)
+- **Local markdown** (default) — issues live as files under `.claude/scratch/<feature>/`, gitignored (good for solo projects or repos without a remote)
 - **GitHub** — issues live in the repo's GitHub Issues (uses the `gh` CLI)
 - **Jira** — issues live in a Jira project (uses the Atlassian MCP or the `jira` CLI)
 - **Other** (Linear, Bitbucket Issues, etc.) — ask the user to describe the workflow in one paragraph; the skill will record it as freeform prose
@@ -59,7 +62,7 @@ Detect from `git remote -v` and propose the match. If no remote is present or th
 
 **Section C — Workflow conventions.**
 
-> Explainer: "Workflow conventions" are the team rules for branching, committing, and merging. Skills that create branches, write commits, or open pull requests read `docs/agents/workflow.md` to match your team's standards — so they don't open PRs with the wrong title format or name branches in a way that breaks your CI or review process.
+> Explainer: "Workflow conventions" are the team rules for branching, committing, and merging. Skills that create branches, write commits, or open pull requests read `CONTRIBUTING.md` to match your team's standards — so they don't open PRs with the wrong title format or name branches in a way that breaks your CI or review process. `CONTRIBUTING.md` is the canonical doc here, not a stub pointing elsewhere — humans get the same file skills read.
 
 Detect first, then confirm, then fill gaps:
 
@@ -73,11 +76,21 @@ Capture all five fields as freeform prose (not a fixed enum):
 
 - **Base branch** — the default PR target; detect from `git symbolic-ref refs/remotes/origin/HEAD` or assume `main`. Note any other long-lived branches (e.g. `develop`, `release/*`) but don't try to describe the full release flow — that's a fleet concern.
 - **Branch naming** — e.g. `feat/<slug>`, `fix/<slug>`, `<username>/<description>`, or no convention
-- **Commit message format** — e.g. Conventional Commits `<type>(<scope>): <description>`, gitmoji, or freeform
+- **Commit message format** — e.g. Conventional Commits `<type>(<scope>): <description>`, gitmoji, or freeform. Also confirm whether ticket numbers belong in the commit message — the default is no (redundant with the branch name/PR), so only record a deviation if the user wants tickets repeated there.
 - **Merge strategy** — squash / rebase / merge commit; note whether to delete the branch after merge
 - **PR title format** — e.g. mirrors commit message format, `PROJ-1234 | <description>`, or freeform
 
-**Section D — Domain docs.**
+**Section D — Coding standards.**
+
+> Explainer: "Coding standards" are this repo's actual code-level conventions — style, lint rules, architectural patterns. Skills that write or review code (`implement`, `review`) read this to match how the codebase already works, and both are expected to offer updates to it as new patterns get established — it's a living doc, not a one-time snapshot. Also captured in `CONTRIBUTING.md`, in a section separate from workflow conventions.
+
+Detect first, then confirm:
+
+- Read linter/formatter config found in step 1 (ESLint, Prettier, `.editorconfig`) and summarise the concrete rules that would surprise someone unfamiliar with the codebase — not a dump of every rule the linter enforces.
+- Check `CONTRIBUTING.md` (if it already existed) for any style/architecture guidance already written down.
+- If nothing is discoverable, don't invent rules — record the section as empty and let `implement`/`review` fill it in over time as real patterns get established. An empty section is correct, not incomplete.
+
+**Section E — Domain docs.**
 
 > Explainer: Some skills (`deepen`, `implement`) read a `CONTEXT.md` file to learn the project's domain language, and `docs/adr/` for past architectural decisions. They need to know whether the repo has one global context or multiple (e.g. a monorepo with separate frontend/backend contexts) so they look in the right place.
 
@@ -91,7 +104,8 @@ Confirm the layout:
 Show the user a draft of:
 
 - The `## Agent skills` block to add to whichever of `CLAUDE.md` / `AGENTS.md` is being edited (see step 4 for selection rules)
-- The contents of `docs/agents/issue-tracker.md`, `docs/agents/code-host.md`, `docs/agents/workflow.md`, and `docs/agents/domain.md`
+- The contents of `docs/agents/issue-tracker.md`, `docs/agents/code-host.md`, and `docs/agents/domain.md`
+- The `## Workflow` and `## Coding standards` sections to add to `CONTRIBUTING.md`
 
 Let them edit before writing.
 
@@ -122,14 +136,23 @@ The block:
 
 ### Workflow conventions
 
-[one-line summary — e.g. "Conventional Commits, feat/* branches, squash merge"]. See `docs/agents/workflow.md`.
+[one-line summary — e.g. "Conventional Commits, feat/* branches, squash merge"]. See `CONTRIBUTING.md`.
+
+### Coding standards
+
+[one-line summary, or "Not yet established" if the section came up empty]. See `CONTRIBUTING.md`.
 
 ### Domain docs
 
 [one-line summary of layout — "single-context" or "multi-context"]. See `docs/agents/domain.md`.
 ```
 
-Then write the docs files using the seed templates in this skill folder as a starting point:
+**Pick the CONTRIBUTING.md path:**
+
+- If `CONTRIBUTING.md` doesn't exist, create it with `## Workflow` and `## Coding standards` sections using [workflow.md](./workflow.md) and [coding-standards.md](./coding-standards.md) as templates. Open the file with a short human-first intro — what the doc covers and why a contributor should read it — before the sections. Mention that the agent skills follow the same conventions in one trailing sentence, not as the lead framing; a human reader should never feel like the primary audience is the tooling.
+- If it already exists, append `## Workflow` and `## Coding standards` sections (or update them in-place if they're already there from a prior run) — never overwrite unrelated existing content, same rule as `AGENTS.md`/`CLAUDE.md` above.
+
+Then write the remaining docs files using the seed templates in this skill folder as a starting point:
 
 - [issue-tracker-github.md](./issue-tracker-github.md) — GitHub issue tracker
 - [issue-tracker-jira.md](./issue-tracker-jira.md) — Jira issue tracker
@@ -137,11 +160,10 @@ Then write the docs files using the seed templates in this skill folder as a sta
 - [code-host-github.md](./code-host-github.md) — GitHub code host
 - [code-host-bitbucket.md](./code-host-bitbucket.md) — Bitbucket code host
 - [code-host-gitlab.md](./code-host-gitlab.md) — GitLab code host
-- [workflow.md](./workflow.md) — workflow conventions (universal; not per-host)
 - [domain.md](./domain.md) — domain doc consumer rules + layout
 
 For "other" issue trackers or code hosts, write the relevant `docs/agents/` file from scratch using the user's description.
 
 ### 5. Done
 
-Tell the user the setup is complete and which engineering skills will now read from these files. Mention they can edit `docs/agents/*.md` directly later — re-running this skill is only necessary if they want to switch issue trackers, change code host, change workflow conventions, or restart from scratch.
+Tell the user the setup is complete and which engineering skills will now read from these files. Mention they can edit `docs/agents/*.md` or `CONTRIBUTING.md` directly later — re-running this skill is only necessary if they want to switch issue trackers, change code host, change workflow conventions, or restart from scratch.

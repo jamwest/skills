@@ -41,5 +41,9 @@ A skill operating against a repo's own documentation (`CONTEXT.md`, `docs/adr/`,
 _Avoid_: Context mode, anchored mode
 
 **Workflow conventions**:
-The team-specific rules for branching, committing, merging, and PR titling, captured in `docs/agents/workflow.md` during `init`. Skills that create branches, write commits, or open PRs read from here to operate consistently with the team's standards.
-_Avoid_: Git conventions, team standards, coding standards
+The team-specific rules for branching, committing, merging, and PR titling, captured in `CONTRIBUTING.md` during `init`. Skills that create branches, write commits, or open PRs read from here to operate consistently with the team's standards. Deliberately excludes code style, lint rules, and architectural patterns — see Coding standards. `CONTRIBUTING.md` is the canonical doc for both humans and skills — not a stub pointing elsewhere.
+_Avoid_: Git conventions, team standards
+
+**Coding standards**:
+The living record of this repo's actual code-level conventions — style, lint rules, architectural patterns, and other in-code standards a change is expected to follow. Captured as its own section in `CONTRIBUTING.md`, seeded from linter/formatter config where it exists, and kept current afterward rather than snapshotted once. Skills that write or review code (`implement`, `review`) read from it; `implement` and `review` are also the ones expected to offer updates to it as new patterns get established.
+_Avoid_: Style guide, lint config, workflow conventions

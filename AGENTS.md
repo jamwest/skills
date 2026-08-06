@@ -14,7 +14,11 @@ GitHub — `github.com/jamwest/skills`. See `docs/agents/code-host.md`.
 
 ### Workflow conventions
 
-Conventional Commits, `feat/*` / `fix/*` branches, squash merge. See `docs/agents/workflow.md`.
+Conventional Commits, `feat/*` / `fix/*` branches, squash merge. See `CONTRIBUTING.md`.
+
+### Coding standards
+
+Not yet established — added to `CONTRIBUTING.md` as real patterns emerge.
 
 ### Domain docs
 
