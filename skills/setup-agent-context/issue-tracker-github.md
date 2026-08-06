@@ -20,3 +20,14 @@ Create a GitHub issue.
 ## When a skill says "fetch the relevant ticket"
 
 Run `gh issue view <number> --comments`.
+
+## Wayfinding operations
+
+Used by `/wayfinder` for its map and decision tickets.
+
+- **Create the map**: `gh issue create --title "<destination>" --body "..." --label "wayfinder:map"`. Create the label first if it doesn't exist (`gh label create wayfinder:map --color <hex>`), and likewise for `wayfinder:grilling`, `wayfinder:prototype`, `wayfinder:research`, `wayfinder:task`.
+- **Create a ticket**: `gh issue create --title "..." --body "..." --label "wayfinder:<type>"`. Link it as a child of the map with `gh sub-issue add --parent <map-number> --child <ticket-number>` if the `gh-sub-issue` extension is installed (same `GH_SUBISSUE_AVAILABLE` check `break-it-down` uses) — otherwise add a `Part of #<map-number>` line in the body instead.
+- **Blocking**: there's no native `gh` CLI primitive for issue-to-issue blocking as of this writing. Record it as a `Blocked by: #<N>` line in the ticket body; compute the frontier by reading each open, unassigned child issue's body for unresolved `Blocked by` lines.
+- **Claim a ticket**: `gh issue edit <number> --add-assignee @me`.
+- **Frontier query**: list the map's open, unassigned child issues (`gh sub-issue list --parent <map-number>` if the extension is installed, otherwise search issue bodies for `Part of #<map-number>`), then filter out any with an unresolved `Blocked by` line.
+- **Close with resolution**: `gh issue comment <number> --body "<resolution>"`, then `gh issue close <number>`.

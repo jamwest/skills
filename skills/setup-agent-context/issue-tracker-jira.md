@@ -34,3 +34,14 @@ Create a Jira issue with `mcp__claude_ai_Atlassian__createJiraIssue`. Use `Story
 ## When a skill says "fetch the relevant ticket"
 
 Call `mcp__claude_ai_Atlassian__getJiraIssue` with the issue key. If only a number is given (e.g. `123`), prepend the project key from the section above.
+
+## Wayfinding operations
+
+Used by `/wayfinder` for its map and decision tickets.
+
+- **Create the map**: create an Epic (or a Story if the project has no Epic issue type) titled with the destination, via `mcp__claude_ai_Atlassian__createJiraIssue`. Apply a `wayfinder-map` label with `mcp__claude_ai_Atlassian__editJiraIssue`.
+- **Create a ticket**: `createJiraIssue` with `parent` set to the map's key, labelled `wayfinder-<type>` (`wayfinder-grilling`, `wayfinder-prototype`, `wayfinder-research`, `wayfinder-task`).
+- **Blocking**: use `mcp__claude_ai_Atlassian__createIssueLink` with a "Blocks" / "is blocked by" link type (list available types with `mcp__claude_ai_Atlassian__getIssueLinkTypes`) between tickets — Jira's native issue links render this in the UI.
+- **Claim a ticket**: `editJiraIssue` to set `assignee`, resolving the account id via `mcp__claude_ai_Atlassian__lookupJiraAccountId`.
+- **Frontier query**: `searchJiraIssuesUsingJql` — e.g. `parent = <map-key> AND status = "To Do" AND assignee is EMPTY` — then filter out any still linked as "is blocked by" an open issue.
+- **Close with resolution**: `addCommentToJiraIssue` with the resolution, then `transitionJiraIssue` to `Done`.
