@@ -62,6 +62,12 @@ npx skills add jamwest/skills --skill <skill-name> -g -a claude-code -y
 
 Re-run the same install command to pull the latest version of any skill.
 
+## Inspiration
+
+Several skills here started from [mattpocock/skills](https://github.com/mattpocock/skills).
+See [docs/mattpocock-mapping.md](docs/mattpocock-mapping.md) for the lineage — what's adapted,
+what's original here, and what from his repo is still worth a look.
+
 ## License
 
 [LICENSE](LICENSE)
