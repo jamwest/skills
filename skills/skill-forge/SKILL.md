@@ -9,6 +9,40 @@ Guide the user through designing and writing a new skill. The output is a `SKILL
 
 This skill uses `grill` internally. Follow the same one-question-at-a-time discipline: recommend first, then hear the user's answer, then resolve or drill deeper.
 
+## Context engineering principles
+
+Apply these throughout — while grilling, drafting, and writing — not just when Branch E comes up.
+They're what makes a skill work well with a large-context model rather than fighting it.
+
+- **Progressive disclosure over frontloading.** If a skill has content that's only relevant to a
+  subset of runs — one branch per tracker, host, or mode — split each branch into its own bundled
+  file, read only when that branch is active. Don't inline every branch into `SKILL.md` so each
+  run pays the token cost of content it doesn't need. `setup-agent-context`'s per-host/per-tracker
+  templates and `implement`'s per-topic files (`tests.md`, `mocking.md`, `refactoring.md`, ...) are
+  the pattern to imitate; `break-it-down`'s per-tracker creation steps (`create-jira.md`,
+  `create-github.md`, `create-local.md`) are the same idea applied after the fact.
+
+- **Trust the model's judgment.** Write for a capable model, not a brittle one. Reserve long,
+  explicit, repeated instruction for the few things that are genuinely non-obvious or where a
+  plausible mistake is costly — a specific gotcha, a real failure mode that's actually been seen —
+  not for things a competent agent would infer on its own. `ui-evidence`'s verbose warning about
+  the Chrome debugging banner earns its length because skipping the wait is "the most tempting
+  thing to skip" and produces confident-looking wrong evidence; that's a deliberate exception, not
+  the default register. Most instructions should be shorter than that.
+
+- **Eliminate redundancy, including within a single skill.** Before writing a check or a
+  convention into a new skill, ask whether it already lives somewhere — `CONTRIBUTING.md`,
+  `docs/agents/*.md`, another skill's bundled file, the frontmatter description itself. If a fact
+  could vary per-repo (commit format, ticket-number policy, base branch, coding standards), defer
+  to `CONTRIBUTING.md` rather than hardcoding one opinion — see `commit` and `tidy-branch`. And
+  don't make a skill verify the same fact two different ways (e.g. checking for a marker block
+  AND separately re-deriving the same information) — pick the one direct check.
+
+- **The frontmatter description carries the trigger.** It's what routes an agent to this skill
+  over a neighbor — write it to actually do that job. Don't also re-explain "use this when..." at
+  length in the body; the body should describe what the skill does and how, not re-litigate when
+  to invoke it.
+
 ## Process
 
 ### 1. Explore existing skills
@@ -38,7 +72,7 @@ Walk through the design one question at a time. Give your recommendation before 
 
 - What does the skill receive? A file path, a PRD, a codebase, free text, nothing?
 - Does it take arguments (like `handoff`'s `argument-hint`)? If so, what are they?
-- Does it need to read `CONTEXT.md`, `docs/adr/`, or `docs/agents/`? If yes, flag that the skill should check for an `## Agent skills` block first.
+- Does it need to read `CONTEXT.md`, `docs/adr/`, `docs/agents/`, or `CONTRIBUTING.md` (workflow conventions and coding standards live there, not `docs/agents/workflow.md`)? If yes, flag that the skill should check for an `## Agent skills` block first.
 
 **Branch C — Output**
 
@@ -56,6 +90,10 @@ Walk through the design one question at a time. Give your recommendation before 
 **Branch E — Dependencies**
 
 - Does it reference format specs, templates, or seed files? (e.g. `grill` bundles `adr-format.md` and `context-format.md`)
+- Does it have content that's only relevant to a subset of runs — one branch per tracker, host, or
+  mode? If so, each branch becomes its own bundled file read conditionally, not an always-loaded
+  section of `SKILL.md` (see `setup-agent-context`'s per-host templates or `break-it-down`'s
+  per-tracker creation steps).
 - Does it call other skills by name? List them explicitly so the dependency is visible.
 - Will it work on a local LLM without browser access? If it relies on web search or external APIs, flag that `researcher` subagent role is needed and it will degrade on the pi.
 

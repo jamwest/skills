@@ -8,7 +8,11 @@ Every skill is tagged with a role so `fleet-command` knows how to delegate it an
 Decomposes a plan into workstreams and delegates to other agents. Never writes code or edits files directly. Reads input (PRD, issue list, brief) and produces a delegation plan. Example: `fleet-command`.
 
 **`scout`**
-Explores the codebase — reads files, maps structure, identifies patterns, surfaces findings. No external network calls. Safe to run on a local LLM without browser access. Example: the exploration phase of `deepen`.
+Explores and reads — codebase, git history, issue trackers — and surfaces findings or drafts a
+text deliverable. Never writes or edits a file itself, even if the deliverable is meant to be
+copied elsewhere. No external network calls. Safe to run on a local LLM without browser access.
+Examples: the exploration phase of `deepen`; `commit` and `release-notes`, which read git state
+and hand back a drafted message/summary without touching the repo.
 
 **`researcher`**
 Gathers external knowledge — web search, documentation, third-party APIs. May use browser access. Degrades gracefully if no browser is available; pair with a `scout` for the codebase half of any research task.
