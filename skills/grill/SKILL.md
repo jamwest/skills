@@ -12,22 +12,15 @@ Interview the user relentlessly about every aspect of their plan or design until
 
 Before starting, silently determine the mode:
 
-**Step 1 — Check for an initialised repo.**
+**Step 1 — Determine mode.**
 
-Look for an `## Agent skills` block in `AGENTS.md` or `CLAUDE.md` at the repo root. If found, read it. It tells you:
+- If `CONTEXT.md`, `docs/adr/`, or `docs/agents/` exist → **doc-anchored mode**. If `docs/agents/`
+  exists, read it — it tells you the domain doc layout, where ADRs live, and the issue tracker
+  and code host (used to ground delivery questions). This means `setup-agent-context` has already
+  been run; trust the config, don't re-detect.
+- Otherwise → **freeform mode**.
 
-- Where domain docs live (`CONTEXT.md` layout — single or multi-context)
-- Where ADRs live (`docs/adr/`)
-- Issue tracker and code host (used to ground delivery questions)
-
-This means `init` has already been run. Trust the config; don't re-detect.
-
-**Step 2 — Determine mode.**
-
-- If `CONTEXT.md`, `docs/adr/`, or `docs/agents/` exist (or were found via the `## Agent skills` block) → **doc-anchored mode**
-- Otherwise → **freeform mode**
-
-**Step 3 — Validate doc health (doc-anchored mode only).**
+**Step 2 — Validate doc health (doc-anchored mode only).**
 
 Before the first question, silently check each doc against its format spec:
 
