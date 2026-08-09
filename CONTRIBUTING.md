@@ -3,9 +3,9 @@
 Thanks for contributing. This doc covers how we branch, commit, and merge, and the coding
 conventions we follow — read it before opening your first PR.
 
-The AI skills in this repo (`commit`, `tidy-branch`, `pr-description`, `implement`, and
-eventually `review`) follow the same conventions, so this file stays the one source of truth
-for both.
+The AI skills in this repo (`commit`, `tidy-branch`, `pr-description`, `implement`,
+`fleet-command`, and eventually `review`) follow the same conventions, so this file stays the one
+source of truth for both.
 
 ## Workflow
 

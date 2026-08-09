@@ -41,21 +41,19 @@ Update the checkpoint SHA here whenever this doc gets a fresh pass.
 - `release-notes` — no equivalent.
 - `tidy-branch` — no history-reshaping skill; his `resolving-merge-conflicts` is adjacent but solves a different problem (conflicts, not reshaping) — see `rebase` below for where that one actually landed.
 - `ui-evidence` — no browser-automation evidence-capture skill. First skill tagged `compatibility: claude-code` (see ADR-0001).
-
-## Planned here, with a likely analog over there
-
-Stub directory that exists in `skills/` but has no `SKILL.md` yet. Build order, settled
-2026-08-06 (`review`, `bug`, `rebase`, `which-skill`, `handoff`, `deepen`, `wayfinder` done —
-see the table above):
-
-1. `fleet-command` — last; orchestration only pays off once there's real parallel work from the
-   others to orchestrate. No direct mps analog anymore now that `wayfinder` covers the
-   planning/tracking half of what it used to point at — its remaining job is purely execution-time,
-   orchestrating multiple agents across already-decided parallel work.
+- `fleet-command` — no direct mps analog. Originally scoped (in the now-superseded "Planned here"
+  note below) as purely execution-time — dispatching agents across an already-decided parallel
+  structure, with `wayfinder` owning the planning half. Built 2026-08-10 with a wider job than
+  that: it infers the dependency graph itself (which subtasks are independent vs. blocked on
+  another) from each subtask's title/description/acceptance criteria, since `break-it-down`
+  doesn't record explicit dependency edges. Dispatches one `/implement` subagent per subtask into
+  its own git worktree and branch off a shared integration branch, commits via `/commit`, tears
+  down the worktree, and offers (never assumes) to push branches and open PRs via `/pr-description`
+  into the integration branch.
 
 Pipeline shape: `deepen` (find + rank) → `grill` (small-scope item) or `wayfinder`
 (session-spanning item) → `blueprint` → `break-it-down` → `implement` (single task) or
-`fleet-command` (orchestrated, once built).
+`fleet-command` (fan out across several subtasks at once).
 
 ## Distributed here rather than a standalone skill
 

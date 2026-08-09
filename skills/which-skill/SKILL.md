@@ -34,6 +34,11 @@ here sends the user down the wrong flow with confidence.
    local scratch path. Ends with one bounded, automatic `/review` round of its own: a fresh
    sub-agent reviews the diff, `/implement` auto-fixes hard/spec findings and re-reviews once,
    then stops — it doesn't loop until clean, and leaves judgement-call smells for you.
+   **If the parent ticket has several subtasks ready at once** — use `/fleet-command` instead of
+   calling `/implement` on each one in turn: it works out which subtasks are independent versus
+   dependent, then dispatches one `/implement` subagent per subtask into its own git worktree and
+   branch off a shared integration branch, committing and cleaning up each worktree as agents
+   finish.
 5. From there it's a manual, one-at-a-time call: **`/review`** again yourself if you want a second
    look (the judgement-call smells `/implement` deliberately left, or a check right before
    opening the PR), **`/pr-description`** to draft the PR (pulls in `/ui-evidence` itself if the
@@ -82,13 +87,6 @@ interruption.
 ## Meta
 
 **`/skill-forge`** — create a new skill for this repo, including updates to this map.
-
-## Not yet built
-
-Stub directory exists, no `SKILL.md` yet — see `docs/mattpocock-mapping.md` for the build order
-and design notes. Don't route to it; say the situation calls for one and point at the stub.
-
-- **`fleet-command`** — orchestrate multiple agents across already-decided parallel work.
 
 ## Maintenance
 
