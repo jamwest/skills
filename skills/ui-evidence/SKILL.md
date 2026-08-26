@@ -20,10 +20,10 @@ a change that compiled and tested clean looked wrong on screen.
 Beyond that it depends which browser Step 3 picks: the **headless** path needs Node 22+
 and a Chrome install and nothing else, while the **real-Chrome** path needs macOS, the
 Claude-in-Chrome tools connected, Chrome running with the user signed into the app, and
-Screen Recording permission granted to the app running the session. If a prerequisite is
-absent, say which one and what the user should do — a teammate on Linux, or with the
-extension disconnected, should get a clear one-liner and the other path, not a pile of
-failed capture attempts. Everything past capture — the markdown block, the captions — is
+Screen Recording permission granted to the app running the session. If a prerequisite is absent, name it and
+offer the user a choice rather than improvising around it — Step 3 says what that choice
+is. A teammate on Linux, or with the extension disconnected, should get one clear
+question, not a pile of failed capture attempts. Everything past capture — the markdown block, the captions — is
 plain text with no tooling dependency at all.
  
 ## Step 1 — Decide whether there's anything to see
@@ -80,6 +80,29 @@ choice.
 Use the `claude-in-chrome` tools, not the in-app Browser pane: the in-app browser has no
 session and lands on the sign-in wall. The user's Chrome is already signed in. Driving it
 without asking is expected for this workflow.
+ 
+**Check they are actually connected before going further, and if they are not, stop and
+ask.** This is a real fork and not a formality: the tools are frequently absent, and the
+three wrong reactions are all tempting. Do not silently fall back to headless — you
+picked this path because a session is required, and headless will land on the sign-in
+wall and screenshot it. Do not type a credential to get past that wall, ever, even one
+the user pasted into the chat earlier. Do not quietly finish without evidence: a
+report that drops it without saying so implies a check that never happened.
+ 
+Put it to the user as a choice, in one short message:
+ 
+- **Connect the extension** and say when — then carry on from here.
+- **Skip the evidence** for this change — then say plainly in your final message that it
+  went unverified in a browser and why, so the gap is on the record rather than implied.
+- **Point you at a way in that needs no real session** — a seeded account, a bypass flag,
+  a fixture credential already committed to the repo, a mock backend. Any of those turns
+  the question above into a "no", and the headless path opens up.
+ 
+Wait for the answer. Don't guess which they'd prefer, and don't start capturing something
+adjacent to prove you were busy.
+ 
+The same applies in reverse, less often: if the headless path is the right one but Node
+or Chrome is missing, say which and offer the same choice rather than improvising.
  
 Two side effects to keep in mind, and to mention if they matter: clicking a
 copy-to-clipboard control overwrites the user's clipboard, and any action you take is

@@ -53,6 +53,9 @@ say no.
   `.claude/pr/<slug>/`. It writes screenshots there and returns captioned PNGs plus a
   markdown block already shaped for a PR description — use that block as-is under an
   "Evidence" heading. Don't re-caption or re-summarize it.
+- If `ui-evidence` comes back without screenshots because the user chose to skip them,
+  omit the Evidence heading and say in your handover that the description is going out
+  unverified in a browser. Don't leave an empty heading, and don't imply shots exist.
 - If no: skip the section entirely. Don't write "No UI changes" — omission is the signal,
   and a line saying nothing happened is one more line the reviewer has to skim past.
 
