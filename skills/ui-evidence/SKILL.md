@@ -1,6 +1,6 @@
 ---
 name: ui-evidence
-description: Prove a finished UI change actually works by driving the user's real Chrome session against their localhost dev server, capturing screenshots as evidence into .claude/ui/ (or .claude/pr/<slug>/ when called from pr-description), and sending them back as captioned PNGs plus a paste-ready markdown block for a PR description. Use this at the end of ANY implementation whose effect is visible in a browser page — a component, route, style, form, copy change, layout fix — even when the user never mentions screenshots or testing. Also use when the user says "dev test", "verify in the UI", "screenshot the change", "prove it works", or asks for evidence a change landed.
+description: Prove a finished UI change actually works by driving a browser against the user's localhost dev server — a private headless Chrome by default, or their real signed-in Chrome when the app sits behind a login you must not type past — capturing screenshots as evidence into .claude/ui/ (or .claude/pr/<slug>/ when called from pr-description), and sending them back as captioned PNGs plus a paste-ready markdown block for a PR description. Use this at the end of ANY implementation whose effect is visible in a browser page — a component, route, style, form, copy change, layout fix — even when the user never mentions screenshots or testing. Also use when the user says "dev test", "verify in the UI", "screenshot the change", "prove it works", or asks for evidence a change landed.
 subagent-role: worker
 argument-hint: "optional output directory (defaults to .claude/ui/ in the repo; pr-description passes .claude/pr/<slug>/)"
 compatibility: claude-code
@@ -16,14 +16,15 @@ Run it when you'd otherwise write "the change is complete" about something a per
 could see in a browser. The screenshots also catch your own mistakes — more than once
 a change that compiled and tested clean looked wrong on screen.
  
-**What this needs, and what to say if it's missing.** macOS (the capture path uses
-`screencapture` and Chrome's AppleScript interface), the Claude-in-Chrome tools
-connected, Chrome running with the user signed into the app, a dev server already up,
-and Screen Recording permission granted to the app running the session. If a
-prerequisite is absent, say which one and what the user should do — a teammate on Linux
-or with the extension disconnected should get a clear one-liner, not a pile of failed
-capture attempts. Everything past capture — the markdown block, the captions — is plain
-text with no tooling dependency at all.
+**What this needs, and what to say if it's missing.** A dev server already up, always.
+Beyond that it depends which browser Step 3 picks: the **headless** path needs Node 22+
+and a Chrome install and nothing else, while the **real-Chrome** path needs macOS, the
+Claude-in-Chrome tools connected, Chrome running with the user signed into the app, and
+Screen Recording permission granted to the app running the session. If a prerequisite is
+absent, say which one and what the user should do — a teammate on Linux, or with the
+extension disconnected, should get a clear one-liner and the other path, not a pile of
+failed capture attempts. Everything past capture — the markdown block, the captions — is
+plain text with no tooling dependency at all.
  
 ## Step 1 — Decide whether there's anything to see
  
@@ -56,12 +57,29 @@ You need concrete URLs, which often means finding real IDs first (a patient, an 
 a record). Get them by navigating the app's own list/search pages rather than guessing
 IDs, and reuse them across shots so the report reads coherently.
  
-## Step 3 — Drive the user's Chrome
+## Step 3 — Drive a browser
  
-Use the `claude-in-chrome` tools, not the in-app Browser pane: local apps usually sit
-behind a real login (WorkOS, Auth0, SSO), the in-app browser has no session and lands
-on a sign-in wall, and you must never type credentials to get past one. The user's
-Chrome is already signed in. Driving it without asking is expected for this workflow.
+**Pick the path first, because it decides everything after it.** One question: *does
+reaching the state need a session you cannot create yourself?* A real login — WorkOS,
+Auth0, SSO, an account you must not type a password for — means yes. A dev server with
+seeded data, a mock backend, a fixture credential that is committed to the repo, or no
+auth at all means no.
+ 
+- **Yes → the user's real Chrome**, below. It is the only way in, because you must never
+  type credentials past a sign-in wall and their Chrome is already through it.
+- **No → a private headless Chrome**, further below. Prefer it whenever it is available:
+  it is better evidence and less intrusive, and the reason for the Chrome path simply
+  does not apply.
+ 
+Say which you picked and why in one clause. A reviewer who sees a desktop-width shot of
+something that should have been a phone deserves to know it was a constraint, not a
+choice.
+ 
+### The user's real Chrome, when a session is required
+ 
+Use the `claude-in-chrome` tools, not the in-app Browser pane: the in-app browser has no
+session and lands on the sign-in wall. The user's Chrome is already signed in. Driving it
+without asking is expected for this workflow.
  
 Two side effects to keep in mind, and to mention if they matter: clicking a
 copy-to-clipboard control overwrites the user's clipboard, and any action you take is
@@ -98,6 +116,42 @@ Watch for state you didn't intend, too — a stray "Required" error under a fiel
 tabbed out of, or a hover tooltip left under the cursor. Reviewers read those as bugs
 in your change. Reset and retake instead of explaining them away in a caption.
  
+### A private headless Chrome, when no session is required
+ 
+`capture-headless.mjs`, next to this file, launches a throwaway Chrome on a scratch
+profile and drives it over CDP. No dependencies — Node 22+ ships the WebSocket client
+that is all CDP needs. Import it and write a short script; it both drives and captures,
+so **the tab marker above and Step 4's region and banner apparatus do not apply here.**
+ 
+```js
+import { open } from '<skill-dir>/capture-headless.mjs';
+ 
+const page = await open({ out: '.claude/pr/GH-12' });   // viewport defaults to a phone
+await page.goto('http://localhost:5173/');
+await page.type('input[type=password]', 'fixture-not-a-real-password');
+await page.click('button');
+await page.shot('01-signed-in');
+await page.close();
+```
+ 
+`goto`, `type` (real key events, not assigned `.value`), `click`, `evaluate`, `sleep`,
+`shot` and `close`. Pass `viewport` to `open()` when a phone is the wrong shape.
+ 
+Why prefer it, so the choice is not arbitrary:
+ 
+- **The viewport is exact and is often itself the claim.** "Thumb-reachable, one tap
+  deep, used one-handed" cannot be demonstrated by a desktop window, and cropping cannot
+  fake it.
+- **No banner, so no waiting.** The 20-second wait in Step 4 exists only because CDP
+  against the user's Chrome raises a debugging banner. A private instance has none.
+- **It touches nothing of the user's** — no tabs, clipboard, history, account, or Screen
+  Recording grant, and no window stealing focus mid-session.
+- **It is scriptable**, so states come from the app's own control surfaces rather than
+  hand-clicking, and a rerun produces the same shots.
+ 
+The tab-marker problem does not exist here either: the browser has exactly one tab, on a
+scratch profile, and nobody else can put one on the same origin.
+ 
 ## Step 4 — Capture to real files
 
 **Resolve the output directory first.** If an argument was passed, treat it as the
@@ -107,6 +161,11 @@ default to `.claude/ui/` in the repo root. Either way, before the first write, c
 repo's `.gitignore` for an entry covering that directory (or a broader `.claude/`
 entry); if none exists, add it — this is skillset working state, not project
 documentation, and shouldn't be committed.
+
+**On the headless path the files already exist** — `page.shot(name)` wrote each one as
+you went. Skip to "Check your own work" below; none of the apparatus in between applies.
+
+### Capturing from the user's Chrome
 
 The browser MCP's screenshot returns an image into the conversation but writes nothing
 to disk (`save_to_disk` produces no file), and a report needs files. So capture with
@@ -144,12 +203,18 @@ Ten seconds was measured as sometimes-enough and sometimes not, so prefer twenty
 shot still shows the banner, wait again and retake — this is the single highest-value
 habit in the whole skill, and the most tempting one to skip.
  
-Then **Read each PNG you captured.** You are checking your own work: is it the right
-page, the right state, the framing you expected, no banner, no stray hover tooltip?
-Retake anything that isn't right. Screenshots are the deliverable — shipping a wrong
-one is worse than shipping none.
+### Check your own work — both paths
  
-Requirements worth knowing when something fails:
+**Read each PNG you captured.** Is it the right page, the right state, the framing you
+expected, no banner, no stray hover tooltip? Retake anything that isn't right.
+Screenshots are the deliverable, and shipping a wrong one is worse than shipping none.
+ 
+This is not a formality, and scripting does not excuse it — a scripted run repeats a
+setup mistake perfectly. One real example: a first-run form captured with a rollback
+fixture still loaded from the previous shot, so it showed a state that made sense but
+was not the one the caption claimed. Nothing but looking at it would have caught that.
+ 
+Requirements worth knowing when something fails on the Chrome path:
 - Screen Recording permission must be granted to the app running this session
   (System Settings → Privacy & Security → Screen & System Audio Recording). The script
   exits with this message if the capture comes back empty.
@@ -209,5 +274,10 @@ blank"), and name the acceptance criterion a shot satisfies when there is one.
 In your message, keep it to what the evidence shows and anything you *couldn't* prove
 this way — a state you couldn't reach, a page behind a flow you declined to complete,
 something that needs a real device. Silent gaps are how a verification report starts
-lying. And clean up: discard unsaved form state you created (Cancel), and leave the
-user's browser roughly where you found it.
+lying. Name which browser you drove, too: a reader weighing a screenshot should know
+whether it came from a private instance at a viewport you chose or from the user's own
+window at whatever size it happened to be.
+ 
+And clean up. On the headless path that is `page.close()`, which takes the scratch
+profile with it. On the Chrome path it is the user's own browser: discard unsaved form
+state you created (Cancel), and leave it roughly where you found it.
