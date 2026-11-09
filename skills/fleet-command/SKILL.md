@@ -144,6 +144,14 @@ When an agent reports done:
   it as a failure (see below).
 - `git worktree remove .worktrees/<branch>`. The branch persists in the repo; only the working
   tree goes away.
+- If its report has **Known defects**, copy them word for word into every progress update you
+  give the user from now on, until the user decides on each one. Never summarise, merge, reword
+  or drop them — a defect compressed into "low risk, not fixed" is a defect lost.
+
+**When the user decides a Known defect**, check their reason against how the defect works before
+recording it as decided. If the reason contradicts the scenario (e.g. "the unique ID means this
+can't happen" when the unique constraint is what produces the orphan), say so plainly, explain the
+scenario again, and ask again. A decision made on a wrong premise isn't a decision.
 
 **Merging a base.** Merge the blockers in, then verify before dispatching anything onto it:
 
@@ -174,13 +182,16 @@ Once every subtask has finished:
 1. Create `feat/<ticket-slug>--consolidate` off the branch that holds all the work (the last
    stacked branch, or a merge of every subtask branch built as in *Merging a base*).
 2. Run `/review` against the integration branch as the fixed point, and collect the seam
-   candidates and duplications the `/implement` reports named.
+   candidates and duplications the `/implement` reports named. Its Behaviour axis now sees the
+   whole fleet's output at once, so it can catch paths that only diverge across subtasks. Spec
+   "wrong" and Behaviour findings are not `/deepen` work: add each to **Known defects**, quoted
+   word for word.
 3. Run `/deepen` on them in that worktree: fold duplicates into one shared version, build the
    confined seams. No new behaviour; the full suite, end-to-end and visual specs stay green.
 4. Commit, and list it in the final report as one more branch.
 
-Skip this step only if the review finds no cross-subtask duplication and no reported seam is
-confined. Say so in the report.
+Skip steps 3–4 only if the review finds no cross-subtask duplication and no reported seam is
+confined. Say so in the report. Step 2's review always runs.
 
 ### 8. Final report
 
@@ -195,7 +206,14 @@ Nothing pushed yet — branches are local, ready for you to review (diff/log) be
 
 List held or failed subtasks separately, with the reason, if any remain unresolved.
 
-Below the table, for the user to review rather than answer:
+Below the table, first:
+
+- **Known defects** — every Known defect from every `/implement` report and from step 7's review,
+  copied word for word with its subtask, scenario and why it wasn't fixed. Never summarise, merge
+  or drop one, and don't move one into Decisions. Each needs the user's call: fix now, file it, or
+  accept it. Write "none" if there are none.
+
+Then, for the user to review rather than answer:
 
 - **Decisions** the agents made, gathered from their reports in Chose / Why / Impact form. Lead
   with the ones whose impact reaches beyond their own subtask.
