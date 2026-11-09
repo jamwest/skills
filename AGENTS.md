@@ -14,7 +14,7 @@ GitHub — `github.com/jamwest/skills`. See `docs/agents/code-host.md`.
 
 ### Workflow conventions
 
-Conventional Commits, `feat/*` / `fix/*` branches, squash merge. See `CONTRIBUTING.md`.
+Conventional Commits, trunk-based — small logical commits straight to `main`, no branches or PRs. See `CONTRIBUTING.md`.
 
 ### Coding standards
 
