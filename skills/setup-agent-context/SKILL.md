@@ -40,13 +40,13 @@ Assume the user does not know what these terms mean. Each section starts with a 
 
 **Section A — Issue tracker.**
 
-> Explainer: The "issue tracker" is where issues live for this repo. Skills like `fleet-command`, `blueprint`, `break-it-down`, and `wayfinder` read from and write to it — they need to know whether to call `gh issue create`, use Jira via the Atlassian MCP, write a markdown file under `.claude/scratch/`, or follow some other workflow you describe. Pick the place you actually track work for this repo.
+> Explainer: The "issue tracker" is where issues live for this repo. Skills like `fleet-command`, `blueprint`, `break-it-down`, and `wayfinder` read from and write to it — they need to know whether to call `gh issue create`, use Jira via `atlassian-cli`, write a markdown file under `.claude/scratch/`, or follow some other workflow you describe. Pick the place you actually track work for this repo.
 
 Default posture: local markdown unless the user says otherwise. If a `git remote` points at GitHub and the user seems to be tracking work there, surface GitHub Issues as a suggestion. If a Jira domain is discoverable (from environment variables, a `.jira` config file, or the user mentions it), surface Jira as a suggestion. Always confirm before writing.
 
 - **Local markdown** (default) — issues live as files under `.claude/scratch/<feature>/`, gitignored (good for solo projects or repos without a remote)
 - **GitHub** — issues live in the repo's GitHub Issues (uses the `gh` CLI)
-- **Jira** — issues live in a Jira project (uses the Atlassian MCP or the `jira` CLI)
+- **Jira** — issues live in a Jira Cloud project (uses `atlassian-cli`). If picked, also fill the template's site values: project key, board ID, and story points field ID — run the discovery commands in [issue-tracker-jira.md](./issue-tracker-jira.md) and confirm the results with the user
 - **Other** (Linear, Bitbucket Issues, etc.) — ask the user to describe the workflow in one paragraph; the skill will record it as freeform prose
 
 **Section B — Code host.**
@@ -56,7 +56,7 @@ Default posture: local markdown unless the user says otherwise. If a `git remote
 Detect from `git remote -v` and propose the match. If no remote is present or the host is ambiguous, ask.
 
 - **GitHub** — code lives on GitHub or GitHub Enterprise (uses the `gh` CLI)
-- **Bitbucket** — code lives on Bitbucket Cloud or Bitbucket Server
+- **Bitbucket** — code lives on Bitbucket Cloud (uses `atlassian-cli bb`)
 - **GitLab** — code lives on GitLab.com or a self-hosted instance (uses the `glab` CLI)
 - **No remote / other** — ask the user to describe; the skill will record it as freeform prose
 

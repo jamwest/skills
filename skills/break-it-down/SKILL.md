@@ -26,7 +26,7 @@ explicit confirmation.
 
 Check whether `docs/agents/issue-tracker.md` exists at the repo root. If so, read it and extract:
 - **Tracker type**: `jira`, `github`, or `local`
-- **Jira**: project key (e.g. `PROJ`), Atlassian MCP or `jira` CLI availability
+- **Jira**: project key (e.g. `PROJ`), `atlassian-cli` availability
 - **GitHub**: repo slug (e.g. `owner/repo`), `gh` CLI availability
 - **Local**: base path under `.claude/scratch/`
 

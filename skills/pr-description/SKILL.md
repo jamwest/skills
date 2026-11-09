@@ -79,7 +79,7 @@ option.
 - Show the full draft as the deliverable.
 - Ask whether the user wants it opened or applied via the host CLI, using the "open a
   pull request" / description-update convention in `docs/agents/code-host.md` (e.g.
-  `bb pr create --description "..."`, `gh pr edit --body "..."`). Run that command only
+  `atlassian-cli bb pr create <repo> ... --description "..."`, `gh pr edit --body "..."`). Run that command only
   after they say yes *for this run* — a prior yes doesn't carry forward.
 - If they decline or don't say, leave the draft as text. They paste it into the PR
   description themselves, dropping each `ui-evidence` screenshot at its placeholder
