@@ -83,7 +83,7 @@ See [adr-format.md](./adr-format.md) for when to offer an ADR (all three criteri
 ## How to run the interview
 
 - Ask questions **one at a time** — never batch multiple questions.
-- For each question, **give your recommended answer first** before hearing theirs. This gives them something concrete to react to and forces you to have a stake in the outcome.
+- For each question, **give your recommended answer first** before hearing theirs. This gives them something concrete to react to and forces you to have a stake in the outcome. Word the question so "yes" accepts your recommendation.
 - After the user responds, either resolve that branch (settled) or drill deeper if their answer opens new sub-questions.
 - State resolved branches briefly before moving on: _"Resolved: using Jira for issue tracking. Moving on."_
 - If a question can be answered by reading a file or exploring the codebase, **do that instead of asking** — present what you found and confirm.
