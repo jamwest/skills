@@ -1,6 +1,6 @@
 ---
 name: fleet-command
-description: Take a parent ticket whose subtasks already exist (from /break-it-down), work out which subtasks are independent and can run in parallel versus which have to wait on another finishing first, then dispatch one /implement subagent per subtask into its own git worktree and branch off a shared integration branch. Commits each subtask's finished work and tears down its worktree, then — once the fleet finishes — offers, but never assumes, to push the branches and open PRs (via /pr-description) into the integration branch. Use when the user wants to execute a multi-subtask ticket across several agents at once, says "run the fleet on X", "work these subtasks in parallel", or has just run /break-it-down and is ready to start execution.
+description: Take a parent ticket whose subtasks already exist (from /break-it-down), work out which subtasks are independent and can run in parallel versus which have to wait on another finishing first, then dispatch one /implement subagent per subtask into its own git worktree, each branched from the work it depends on (stacked on its blockers, or off a shared integration branch). Commits each subtask's finished work and tears down its worktree, runs a consolidation pass (/review then /deepen) over the whole fleet's output, then offers, but never assumes, to push the branches and open PRs (via /pr-description) into the integration branch. Use when the user wants to execute a multi-subtask ticket across several agents at once, says "run the fleet on X", "work these subtasks in parallel", or has just run /break-it-down and is ready to start execution.
 subagent-role: orchestrator
 compatibility: claude-code
 argument-hint: "parent ticket key or path (e.g. PROJ-123, GH-42, .claude/scratch/<slug>/) with subtasks already created by /break-it-down"
@@ -20,10 +20,9 @@ but fanned out across agents instead of one session at a time.
   to already exist; it doesn't create them.
 - **Implement anything itself** — every line of code comes from an `/implement` subagent. This
   skill's own job is planning, dispatching, committing, and cleaning up worktrees.
-- **Merge branches** — subtask branches merge into the integration branch, and the integration
-  branch into `main`, only through reviewed PRs. Nothing in this skill merges anything.
-- **Resolve conflicts between subtask branches** — if two subtasks land conflicting changes,
-  that's a `/rebase` or `/tidy-branch` job once you're looking at the PRs.
+- **Merge into shared branches** — subtask branches merge into the integration branch, and the
+  integration branch into `main`, only through reviewed PRs. The only merges this skill makes are
+  local ones that build a dependent subtask's starting point from its blockers' branches (step 6).
 - **Update ticket status or close subtasks** — issue management stays manual, same convention
   `/implement` uses.
 
@@ -53,10 +52,14 @@ and so on. Infer ordering only from real signals:
 - Explicit language ("requires", "after", "blocked by", "needs the endpoint from")
 - One subtask defines an interface/schema/contract another subtask consumes
 - Shared surface where sequencing avoids rework (e.g. a migration before the code that reads it)
+- **A structural change to files others edit.** A subtask that moves, splits or renames a file
+  blocks every subtask that edits that file, even when neither mentions the other. Run in
+  parallel, the others edit the old file and every one of them conflicts with the move.
 
 Subtasks with no such signal between them are independent — default to parallel, don't invent an
-ordering that isn't there. `break-it-down` doesn't record explicit dependency edges today, so this
-is inference, not ground truth — present it as a proposal in the next step, not a fact.
+ordering that isn't there. Start from the dependencies `break-it-down` recorded (`Blocked by`
+lines or links), then add any it missed, the structural rule above especially. Present the result
+as a proposal in the next step, not a fact.
 
 ### 4. Show the plan, get confirmation
 
@@ -73,7 +76,11 @@ Layer 1 — dispatch now (parallel):
 
 Layer 2 — waits on Layer 1:
   PROJ-125  Retry button + error state handling  ← depends on PROJ-124 (needs the endpoint contract)
+            base: feat/proj-123-payment-retry--add-retry-endpoint
 ```
+
+Each dependent subtask shows its base (step 6): its blocker's branch, or the blockers it will
+merge.
 
 Ask: _"Does this look right? Say if something should move layers, run independently, or if the cap
 should change."_ Wait for explicit confirmation before creating any branch, worktree, or agent.
@@ -97,13 +104,33 @@ to create the second because the first occupies that path as a file, not a direc
 
 For each subtask in the current layer, up to the concurrency cap at a time:
 
-1. `git worktree add -b feat/<ticket-slug>--<subtask-slug> .worktrees/<branch> feat/<ticket-slug>`
-   from the main working copy.
+1. Create the worktree on the subtask's **base** — the branch it starts from:
+   - **No blockers**: the integration branch.
+   - **One blocker**: that blocker's branch, so the subtask builds on the work it depends on.
+   - **Several blockers**: the first blocker's branch, then merge each other blocker's branch into
+     it (see *Merging a base* below).
+
+   `git worktree add -b feat/<ticket-slug>--<subtask-slug> .worktrees/<branch> <base>` from the
+   main working copy. Branch from the integration branch alone and a dependent subtask starts
+   without the code it depends on.
 2. Spawn one Agent-tool subagent (background), briefed explicitly since none of this is otherwise
    discoverable to it:
    - The absolute worktree path to work in (it must `cd` there — this is a separate working tree,
      not the main one)
-   - The subtask's key
+   - The subtask's key. For a local-markdown tracker, the **absolute path to the issue file in the
+     main working copy**, not a copy inside the worktree: tracker files are usually gitignored, so
+     a copy disappears with the worktree, taking the agent's status and comment updates with it.
+   - What its base already contains: which blockers' work is merged in and what each provides
+     (components, interfaces, files moved), so it doesn't rebuild or work around them
+   - Its own pair of ports for any dev, preview or test server, if the repo's config reads ports
+     from the environment. Parallel worktrees on the same hard-coded port test each other's servers.
+     If ports are hard-coded, say so in the brief and have the agent wait for a free port
+   - **Briefs give context, never scope.** Scope comes only from the issue. Don't add constraints
+     ("don't touch X") that the issue doesn't state; if the issue and a background doc disagree,
+     the issue wins
+   - **Decide, don't defer**: the agent makes every judgement call within its subtask and reports
+     each as Chose / Why / Impact (per `/implement`'s report), escalating only spec contradictions
+     and irreversible actions
    - Instruction to run `/implement <subtask-key>`, then once it's done, run `/commit` in that
      worktree to commit the finished work (reuses `/commit`'s own `CONTRIBUTING.md`-aware message
      format rather than reinventing one here)
@@ -118,13 +145,44 @@ When an agent reports done:
 - `git worktree remove .worktrees/<branch>`. The branch persists in the repo; only the working
   tree goes away.
 
+**Merging a base.** Merge the blockers in, then verify before dispatching anything onto it:
+
+- **Resolve each conflict from both sides' intent**, not by picking one. When one side moved or
+  split a file and the other edited the old copy, keep the move and re-apply the edit in the new
+  location. When both sides appended to the same file (stylesheets especially), keep both blocks
+  whole: check every rule's braces close. Deleting conflict markers from interleaved blocks
+  leaves broken code that typecheckers and unit tests don't read.
+- **Run every check the repo has** on the merged base: build, typecheck, lint (including any CSS
+  or style lint), unit tests, end-to-end, screenshot or visual specs. A merge that only passes
+  typecheck and unit tests isn't verified.
+- **Commit the merge** and record what you resolved; it goes in the final report.
+- Escalate a conflict only when resolving it needs a product call the spec doesn't answer. Say
+  which resolution you'd pick and why.
+
 **On failure** (agent errors, or reports it couldn't finish): leave that worktree in place —
 don't remove evidence of a broken run. Hold any subtask that depended on it (don't dispatch it).
 Surface immediately, don't wait for the batch: _"PROJ-124 failed — [reason]. Retry, skip it (drops
 PROJ-125, which depends on it), or abort the rest of the run?"_ Subtasks already dispatched and
 running keep going regardless of the answer — only *dispatching new work* pauses.
 
-### 7. Final report
+### 7. Consolidate
+
+No single `/implement` agent sees the whole fleet's output, so duplication across subtasks goes
+unseen: two agents each write a unit lookup, a date formatter, a type, and the copies drift apart.
+Once every subtask has finished:
+
+1. Create `feat/<ticket-slug>--consolidate` off the branch that holds all the work (the last
+   stacked branch, or a merge of every subtask branch built as in *Merging a base*).
+2. Run `/review` against the integration branch as the fixed point, and collect the seam
+   candidates and duplications the `/implement` reports named.
+3. Run `/deepen` on them in that worktree: fold duplicates into one shared version, build the
+   confined seams. No new behaviour; the full suite, end-to-end and visual specs stay green.
+4. Commit, and list it in the final report as one more branch.
+
+Skip this step only if the review finds no cross-subtask duplication and no reported seam is
+confined. Say so in the report.
+
+### 8. Final report
 
 ```
 ✓ PROJ-124  Add /payments/retry endpoint         → feat/proj-123-payment-retry--add-retry-endpoint
@@ -137,7 +195,19 @@ Nothing pushed yet — branches are local, ready for you to review (diff/log) be
 
 List held or failed subtasks separately, with the reason, if any remain unresolved.
 
-### 8. Offer to publish
+Below the table, for the user to review rather than answer:
+
+- **Decisions** the agents made, gathered from their reports in Chose / Why / Impact form. Lead
+  with the ones whose impact reaches beyond their own subtask.
+- **Merges** you resolved while building bases, and how.
+- **Questions**, only for what an agent escalated as genuinely the user's call, each with the
+  choice the agent would make.
+
+If any subtask was held or failed, or any `/implement` report suggested `/retro`, add one line
+suggesting `/retro` on this session, naming which subtasks hit friction. Its subagent transcripts
+are part of the session, so one retro covers the whole fleet. Don't run it; it's the user's call.
+
+### 9. Offer to publish
 
 Ask once, for the whole successful batch: _"Push these N branches and open PRs into
 feat/proj-123-payment-retry?"_ Never assume — wait for explicit yes.
