@@ -15,7 +15,8 @@ invoke it, don't open its files, don't start doing the work yourself. What the u
 the next thing to type.
 
 If you're about to assert something load-bearing about a skill's behavior — not just its one-line
-description below — open its `SKILL.md` first rather than routing off the gloss. A wrong claim
+description below — or recommend skipping one of its steps, open its `SKILL.md` first rather than
+routing off the gloss. A wrong claim
 here sends the user down the wrong flow with confidence.
 
 ## The main flow: idea → shipped code
