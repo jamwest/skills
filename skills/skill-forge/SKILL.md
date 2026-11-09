@@ -152,4 +152,9 @@ disable-model-invocation: true  # only for fully deterministic skills (rare)
 
 ### 5. Register the skill
 
-After writing, remind the user to add the skill to `AGENTS.md` or `CLAUDE.md` if their agent config lists available skills explicitly. Check whether the existing `## Agent skills` block needs updating — if it does, propose the addition and confirm before editing.
+Link the new skill so it's live straight away: `./scripts/install-local.sh --skill <name> -y`
+from the repo root. Skills reach the agent only through the symlinks that script makes, and they
+point at the working copy, so a skill that hasn't been linked doesn't exist for any agent, even
+once it's committed. Confirm `~/.claude/skills/<name>` resolves before moving on.
+
+After linking, remind the user to add the skill to `AGENTS.md` or `CLAUDE.md` if their agent config lists available skills explicitly. Check whether the existing `## Agent skills` block needs updating — if it does, propose the addition and confirm before editing.
