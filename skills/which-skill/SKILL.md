@@ -69,6 +69,14 @@ itself once a build spans more than one sitting or needs a paper trail.
   end-of-phase case (same harness, same directory, nothing traveling), just `/compact` — don't
   reach for `/handoff` there.
 
+## After a hard session
+
+**`/retro`** — after a session that was harder than it should have been (long searches, mistakes a
+check could have caught, a reviewer miss, a skill that misled or let work sprawl). Reads the
+session, including subagent transcripts, ranks fixes to the environment and to the skills
+themselves, and applies only the ones you pick. Smooth sessions don't need one. `/implement` and
+`/fleet-command` suggest it when their run hit friction.
+
 ## Codebase health
 
 Not feature work — upkeep, run whenever there's a spare moment.
