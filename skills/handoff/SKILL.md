@@ -45,11 +45,17 @@ here, or is it moving to a different session, place, or person?"_
 
 ### 3. Live background agent (fork)
 
-Check the `claude` CLI is on the `PATH` (`command -v claude`). If it is, launch:
+Check the `claude` CLI is on the `PATH` (`command -v claude`). If it is, write the summary to a
+temp file (`mktemp -t handoff-<slug>`), then launch:
 
 ```
-claude --bg --name "<descriptive name>" "<summary>"
+claude --bg --name "<descriptive name>" -- "$(cat <summary file>)"
 ```
+
+Never inline the summary as a quoted argument: inside double quotes the shell runs backticks and
+expands `$(...)`/`$VAR`, which mangles any summary that quotes code. Passing the file's contents
+through `$(cat ...)` doesn't re-expand them, and `--` stops a summary that starts with `-` being
+read as a flag.
 
 Always pass `--name` with a short, descriptive name (e.g. `"Fix login bug"`) — it's what shows up
 in the job list, session picker, and terminal title. It starts in the current working directory
