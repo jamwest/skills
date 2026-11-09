@@ -211,21 +211,29 @@ Brief the `/brittle-tests` subagent:
 From the reports that come back:
 
 - **Fix directly**: hard violations of a documented standard, any Spec finding (missing, partial,
-  or wrong against what was asked for), and any **High**-confidence brittle-tests finding — an
-  unambiguous instance, not a judgement call.
+  or wrong against what was asked for), any Behaviour finding, and any **High**-confidence
+  brittle-tests finding — an unambiguous instance, not a judgement call.
 - **Decide**: baseline-smell findings, any Standards finding that isn't a hard violation, and
   any **Medium**/**Low**-confidence brittle-tests finding. For each, choose: fix it now if it's
   cheap and inside step 5's scope, or leave it. Either way, record it in the report as a decision
   (see Report below), not as an open question.
 
-After fixing, re-run the full test suite, then run both reviews **one more time** against the same
+**A finding a reviewer reports as wrong is a defect, not a decision.** A Spec "wrong" or any
+Behaviour finding may stay unfixed only when fixing it needs a change outside step 5's scope, or
+needs a product decision. Then it goes in the report's **Known defects** section: the reviewer's
+text quoted word for word, the concrete scenario, and why it wasn't fixed. Never reword it as a
+decision, an "edge case" or "low risk", and never leave it out — whoever reads the report decides
+whether the scenario matters, not you.
+
+After fixing, re-run the full test suite, then run both reviews (`/review` and `/brittle-tests`)
+**one more time** against the same
 fixed point to confirm the fixes landed and didn't introduce a new hard violation or brittle
 pattern. Fixes follow step 5's scope rules — a finding that would need changes outside the diff
-goes in the report instead. If the second round flags a new hard violation, Spec finding or
-**High**-confidence brittle-tests finding, fix it and re-run the suite; don't send it back
+goes in the report instead. If the second round flags a new hard violation, Spec or Behaviour
+finding, or **High**-confidence brittle-tests finding, fix it and re-run the suite; don't send it back
 unfixed. Stop there — no third review round.
 
-Report decisions, not open questions. Every judgement call made along the way — a spec gap you
+Report decisions, not open questions. Every judgement call (defects aside — see Known defects) made along the way — a spec gap you
 filled, a review finding you fixed or left, a seam you built or didn't, a copy choice the spec
 didn't cover — goes in the report as:
 
@@ -241,6 +249,8 @@ or an irreversible or outward-facing action. Even then, say what you'd choose an
 Report:
 
 - What got fixed, and anything either review still flags (with its citations)
+- **Known defects**: every Spec "wrong" or Behaviour finding left unfixed, quoted word for word,
+  with the scenario and why it wasn't fixed (see above). Write "none" if there are none
 - Decisions, in the Chose / Why / Impact form above
 - Make it fast: what was optimised and the measurement, or that it was skipped and why
 - Seam candidates left for `/deepen`, with why each wasn't built
