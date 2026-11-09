@@ -77,6 +77,26 @@ Size each subtask for a single `implement` session:
 - Flag any task you judge too large with ⚠️ and a note explaining why (e.g.
   "⚠️ spans UI and state layer — consider splitting before /implement")
 
+**Check the spec against itself.** Before writing subtasks, read every document the blueprint
+points implementers at (style guides, mockups, ADRs, `CONTEXT.md`, handoff notes) side by side
+and look for places they disagree: a value, a size, a piece of copy, a rule one states and
+another breaks. Each subtask's implementer reads a different slice, so a contradiction left here
+becomes several agents making different choices. List each one in the dry-run under **Spec
+conflicts**, with the resolution you propose and why. Don't create subtasks until the user has
+confirmed or changed each resolution.
+
+**Shared foundations first.** When several subtasks will show or format the same kind of value
+(units, weights, dates, durations) or share copy, put the shared formatter or copy in one early
+foundations subtask that the others are blocked by. Otherwise each subtask writes its own, and the
+copies drift.
+
+**Record dependencies** between subtasks, so `/fleet-command` can plan from them instead of
+inferring:
+- One subtask builds or changes something another uses (a component, an interface, a schema).
+- **One subtask moves, splits or renames a file that others edit.** It blocks every one of them,
+  even when neither mentions the other: run in parallel, they edit the old file and each one
+  conflicts with the move.
+
 Read the **Open Questions** section. For each unresolved question that blocks a subtask, mark that
 subtask 🚫 **Blocked** with the dependency named. Do not include blocked subtasks in the proposed
 creation list — hold them for the dry-run report.
@@ -93,10 +113,14 @@ Parent:    create new Story  (issue: ~ in frontmatter)
 Subtasks:
   1. Add /payments/retry endpoint
      POST endpoint, idempotent, logs failed events to dead-letter queue
+     Blocked by: 3
   2. ⚠️  Retry button + error state handling
      May need splitting — spans UI component and state management layer
   3. Dead-letter queue infra
      SQS queue + DLQ policy; Terraform module
+
+Spec conflicts (resolve before creating):
+  ⚖️  Retry limit: blueprint says 3, ADR 0012 says 5 → propose 3 (blueprint is newer)
 
 Open Questions (will NOT be created):
   🚫  Which queue service? (would block queue-infra task if unresolved)

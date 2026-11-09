@@ -8,5 +8,6 @@ Read this only when Step 1 resolved the tracker as `local`.
 2. Create `.claude/scratch/<slug>/issues/` where `<slug>` is the blueprint filename without
    `.md`.
 3. Write one file per non-blocked subtask: `<NN>-<kebab-title>.md`. Content: H1 title,
-   description body, `Status: todo` line.
+   `Status: todo` line, one `Blocked by: <NN>-<kebab-title>.md` line per dependency from step 3,
+   then the description body.
 4. Print each file path created.
