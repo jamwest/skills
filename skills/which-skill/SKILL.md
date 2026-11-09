@@ -30,7 +30,8 @@ here sends the user down the wrong flow with confidence.
    under `.claude/blueprints/`.
 3. **`/break-it-down`** — decompose the blueprint into tracked work items in the configured issue
    tracker (Jira, GitHub Issues, or local markdown — see `docs/agents/issue-tracker.md`).
-4. **`/implement`** — build one subtask via TDD (red-green-refactor), from its issue key or a
+4. **`/implement`** — build one subtask in three phases — make it work (red-green TDD), make it
+   right (design pass scoped to the diff), make it fast (only when needed) — from its issue key or a
    local scratch path. Ends with one bounded, automatic `/review` round of its own: a fresh
    sub-agent reviews the diff, `/implement` auto-fixes hard/spec findings and re-reviews once,
    then stops — it doesn't loop until clean, and leaves judgement-call smells for you.
