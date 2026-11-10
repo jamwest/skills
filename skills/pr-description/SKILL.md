@@ -36,8 +36,8 @@ own work, and not by restating the diff line by line.
 
 - Look for an issue key in the branch name and commit messages, using the key pattern
   recorded in `docs/agents/issue-tracker.md` (e.g. `PROJ-123`).
-- If found, fetch its title through the tracker convention in that same file (Jira MCP
-  tool, `gh issue view`, etc.).
+- If found, fetch its title with the commands in the `.claude/agents/issue-tracker.local.md`
+  that file points to (`gh issue view`, a Jira MCP tool, etc.).
 - If not found, or the lookup fails, continue without one. Never block the draft on this.
 
 ### 4. Decide if this needs UI evidence
@@ -78,8 +78,9 @@ option.
 
 - Show the full draft as the deliverable.
 - Ask whether the user wants it opened or applied via the host CLI, using the "open a
-  pull request" / description-update convention in `docs/agents/code-host.md` (e.g.
-  `atlassian-cli bb pr create <repo> ... --description "..."`, `gh pr edit --body "..."`). Run that command only
+  pull request" convention in `docs/agents/code-host.md` and the commands in
+  `.claude/agents/code-host.local.md` (e.g. `atlassian-cli bb pr create <repo> ... --description
+  "..."`, `gh pr edit --body "..."`). Run that command only
   after they say yes *for this run* — a prior yes doesn't carry forward.
 - If they decline or don't say, leave the draft as text. They paste it into the PR
   description themselves, dropping each `ui-evidence` screenshot at its placeholder

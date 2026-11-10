@@ -24,13 +24,15 @@ explicit confirmation.
 
 ### 1. Read repo context
 
-Check whether `docs/agents/issue-tracker.md` exists at the repo root. If so, read it and extract:
+Check whether `docs/agents/issue-tracker.md` exists at the repo root. If so, read it, and the
+`.claude/agents/issue-tracker.local.md` it points to, and extract:
 - **Tracker type**: `jira`, `github`, or `local`
-- **Jira**: project key (e.g. `PROJ`), `atlassian-cli` availability
-- **GitHub**: repo slug (e.g. `owner/repo`), `gh` CLI availability
+- **Jira**: project key (e.g. `PROJ`), and how this machine reaches Jira
+- **GitHub**: repo slug (e.g. `owner/repo`), and how this machine reaches GitHub
 - **Local**: base path under `.claude/scratch/`
 
-When tracker is **GitHub**, also check whether the `gh-sub-issue` extension is installed:
+When tracker is **GitHub**, also check whether sub-issues are available, using the check in the
+local file (for `gh`, the `gh-sub-issue` extension):
 
 ```bash
 gh extension list | grep -q 'yahsan2/gh-sub-issue'
@@ -154,7 +156,7 @@ requests changes, apply them, re-show the updated list, and ask again.
 ### 5. Create issues
 
 Create the parent first, then subtasks in order. Follow the conventions in
-`docs/agents/issue-tracker.md` for all tool use and CLI commands, plus the creation steps for
+`docs/agents/issue-tracker.md` and the commands in `.claude/agents/issue-tracker.local.md`, plus the creation steps for
 the tracker resolved in Step 1 — read only the one that matches:
 
 - **Jira** → [create-jira.md](./create-jira.md)

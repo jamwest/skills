@@ -25,7 +25,8 @@ and stays manual — see the end of step 8.
 
 Check whether these exist at the repo root, and read whichever are present:
 
-- `docs/agents/issue-tracker.md` — needed to fetch the task description
+- `docs/agents/issue-tracker.md` — needed to fetch the task description. Use the commands in the
+  `.claude/agents/issue-tracker.local.md` it points to
 - Also note the current `git rev-parse HEAD` before making any changes — call it `<start-sha>`.
   Steps 5, 7 and 8 diff against this point.
 - `docs/agents/domain.md` — confirms whether `CONTEXT.md` is single or multi-context

@@ -29,7 +29,9 @@ bloated, or unwired?) and the places fixes land:
 - `AGENTS.md` / `CLAUDE.md` — repo steering files. Also note the user's global one
   (`~/.claude/CLAUDE.md` or the equivalent for the running agent).
 - `CONTRIBUTING.md` — its **Coding standards** section is what `/review` enforces
-- `docs/agents/` — issue tracker, code host, domain layout
+- `docs/agents/` — issue tracker, code host, domain layout. Shared facts only; this machine's
+  tool commands and workarounds live in `.claude/agents/*.local.md`, which is where tool-usage
+  fixes land
 - The repo's check commands: `package.json` scripts / Makefile / build-tool `lint`/`check`/`test`
   targets, pre-commit config, CI workflows (`.github/workflows/`, etc.)
 
