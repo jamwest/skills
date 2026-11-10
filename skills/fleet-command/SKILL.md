@@ -221,9 +221,10 @@ Then, for the user to review rather than answer:
 - **Questions**, only for what an agent escalated as genuinely the user's call, each with the
   choice the agent would make.
 
-If any subtask was held or failed, or any `/implement` report suggested `/retro`, add one line
-suggesting `/retro` on this session, naming which subtasks hit friction. Its subagent transcripts
-are part of the session, so one retro covers the whole fleet. Don't run it; it's the user's call.
+If any subtask was held or failed, or any `/implement` report named friction in its `/retro`
+line, add one line suggesting `/retro` on this session, naming which subtasks hit friction. Its
+subagent transcripts are part of the session, so one retro covers the whole fleet. Don't run it;
+it's the user's call.
 
 ### 9. Offer to publish
 

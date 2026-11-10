@@ -279,12 +279,14 @@ Report:
   needed"_
 - Seam candidates left for `/deepen`, with why each wasn't built
 - Anything reverted by step 7 as out of scope
-- If the run hit real friction — the second review round still flagged findings, step 7 reverted
-  files, the look-back found a missing seam, or a lot of effort went into finding something — one
-  line suggesting `/retro`, naming the friction. Don't run it; it's the user's call.
 
 Then note that opening the PR (`/pr-description`), cleaning up history (`/tidy-branch`), and
 closing the issue stay the user's call, made one at a time — this skill doesn't chain into any of them on its own.
+
+Always end the report with one line offering `/retro`. If the run hit friction — the second
+review round still flagged findings, step 7 reverted files, the look-back found a missing seam, or
+a lot of effort went into finding something — name it in that line. Don't run it; it's the
+user's call.
 
 ## Checklist per cycle
 
