@@ -1,21 +1,21 @@
 # Code host: GitHub
 
-This repository lives on GitHub (or GitHub Enterprise). Use the `gh` CLI for all host-level operations.
+This repository lives on GitHub (or GitHub Enterprise) at `<OWNER>/<REPO>`. This file holds the
+facts every developer shares. The commands for reaching GitHub live on each developer's machine —
+see below.
 
-## Conventions
+## How your machine talks to GitHub
 
-- **Open a PR**: `gh pr create --title "..." --body "..."`. Use a heredoc for multi-line bodies. Add `--draft` for WIP.
-- **View a PR**: `gh pr view <number> --comments`
-- **List open PRs**: `gh pr list --state open --json number,title,headRefName,author --jq '[.[] | {number, title, branch: .headRefName, author: .author.login}]'`
-- **Checkout a PR branch**: `gh pr checkout <number>`
-- **Merge a PR**: `gh pr merge <number> --squash --delete-branch` (or `--merge` / `--rebase`)
-- **CI status**: `gh pr checks <number>` or `gh run list --branch <branch>`
-- **Repo URL**: infer from `git remote get-url origin`; `gh` resolves this automatically when run inside a clone.
+Each developer reaches GitHub their own way (the `gh` CLI, a GitHub MCP, the web UI).
+The commands for this machine live in `.claude/agents/code-host.local.md`, which is gitignored.
+Read it before you call anything. If it's missing, ask the developer how they reach GitHub, and
+offer to write it with `/setup-agent-context`.
 
 ## When a skill says "open a pull request"
 
-Run `gh pr create` with a descriptive title and body. Link the relevant issue number in the body (e.g. `Closes #42`).
+Open a PR with a descriptive title and body. Link the relevant issue in the body (e.g.
+`Closes #42`).
 
 ## When a skill says "get the PR for this branch"
 
-Run `gh pr view` (no number needed — `gh` infers the current branch's PR).
+Look up the open PR whose head is the current branch.

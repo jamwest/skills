@@ -30,11 +30,16 @@ Look at the current repo to understand its starting state. Read whatever exists;
 - `CONTEXT.md` and `CONTEXT-MAP.md` at the repo root
 - `docs/adr/` and any `src/*/docs/adr/` directories
 - `docs/agents/` — does this skill's prior output already exist?
+- `.claude/agents/issue-tracker.local.md` and `.claude/agents/code-host.local.md` — this machine's commands for the tracker and host. Check `git check-ignore -q .claude/agents/issue-tracker.local.md` too.
 - `.claude/scratch/` — sign that a local-markdown issue tracker convention is already in use
 
 ### 2. Present findings and ask
 
-Summarise what's present and what's missing. Then walk the user through the five decisions **one at a time** — present a section, get the user's answer, then move to the next. Don't dump them all at once.
+Summarise what's present and what's missing.
+
+If `docs/agents/` is already set up and only this machine's `.local.md` files are missing (a new developer on the repo), skip the five sections. Ask how this machine reaches the tracker and host (see "This machine" below), then go to step 3 with just the local files.
+
+Otherwise walk the user through the five decisions **one at a time** — present a section, get the user's answer, then move to the next. Don't dump them all at once.
 
 Assume the user does not know what these terms mean. Each section starts with a short explainer (what it is, why these skills need it, what changes if they pick differently). Then show the choices and the default.
 
@@ -46,8 +51,10 @@ Default posture: local markdown unless the user says otherwise. If a `git remote
 
 - **Local markdown** (default) — issues live as files under `.claude/scratch/<feature>/`, gitignored (good for solo projects or repos without a remote)
 - **GitHub** — issues live in the repo's GitHub Issues (uses the `gh` CLI)
-- **Jira** — issues live in a Jira Cloud project (uses `atlassian-cli`). If picked, also fill the template's site values: project key, board ID, and story points field ID — run the discovery commands in [issue-tracker-jira.md](./issue-tracker-jira.md) and confirm the results with the user
+- **Jira** — issues live in a Jira Cloud project (uses `atlassian-cli`). If picked, also fill the template's site values: project key, board ID, story points field ID, and subtask type name — run the discovery commands in [issue-tracker-jira.local.md](./issue-tracker-jira.local.md) and confirm the results with the user
 - **Other** (Linear, Bitbucket Issues, etc.) — ask the user to describe the workflow in one paragraph; the skill will record it as freeform prose
+
+**This machine.** For GitHub, Jira, or Other, also ask how this developer's machine reaches the tracker. Default to the CLI in the matching `.local.md` template. If they use something else (an MCP, a different CLI), write the local file from their description instead. Shared facts go in `docs/agents/issue-tracker.md`, which is committed. Commands go in `.claude/agents/issue-tracker.local.md`, which is not — tools differ from one developer's machine to the next.
 
 **Section B — Code host.**
 
@@ -59,6 +66,8 @@ Detect from `git remote -v` and propose the match. If no remote is present or th
 - **Bitbucket** — code lives on Bitbucket Cloud (uses `atlassian-cli bb`)
 - **GitLab** — code lives on GitLab.com or a self-hosted instance (uses the `glab` CLI)
 - **No remote / other** — ask the user to describe; the skill will record it as freeform prose
+
+**This machine.** Same split as the tracker: ask how this machine reaches the host (default: the CLI in the matching `.local.md` template). Shared facts go in `docs/agents/code-host.md`, commands in `.claude/agents/code-host.local.md`.
 
 **Section C — Workflow conventions.**
 
@@ -105,6 +114,7 @@ Show the user a draft of:
 
 - The `## Agent skills` block to add to whichever of `CLAUDE.md` / `AGENTS.md` is being edited (see step 4 for selection rules)
 - The contents of `docs/agents/issue-tracker.md`, `docs/agents/code-host.md`, and `docs/agents/domain.md`
+- The contents of `.claude/agents/issue-tracker.local.md` and `.claude/agents/code-host.local.md` (not for a local-markdown tracker or a host with no remote)
 - The `## Workflow` and `## Coding standards` sections to add to `CONTRIBUTING.md`
 
 Let them edit before writing.
@@ -152,18 +162,24 @@ The block:
 - If `CONTRIBUTING.md` doesn't exist, create it with `## Workflow` and `## Coding standards` sections using [workflow.md](./workflow.md) and [coding-standards.md](./coding-standards.md) as templates. Open the file with a short human-first intro — what the doc covers and why a contributor should read it — before the sections. Mention that the agent skills follow the same conventions in one trailing sentence, not as the lead framing; a human reader should never feel like the primary audience is the tooling.
 - If it already exists, append `## Workflow` and `## Coding standards` sections (or update them in-place if they're already there from a prior run) — never overwrite unrelated existing content, same rule as `AGENTS.md`/`CLAUDE.md` above.
 
-Then write the remaining docs files using the seed templates in this skill folder as a starting point:
+Then write the remaining docs files using the seed templates in this skill folder as a starting point. Each tracker and host with a CLI has two templates: the shared facts, written to `docs/agents/`, and this machine's commands, written to `.claude/agents/<name>.local.md`.
 
-- [issue-tracker-github.md](./issue-tracker-github.md) — GitHub issue tracker
-- [issue-tracker-jira.md](./issue-tracker-jira.md) — Jira issue tracker
-- [issue-tracker-local.md](./issue-tracker-local.md) — local-markdown issue tracker
-- [code-host-github.md](./code-host-github.md) — GitHub code host
-- [code-host-bitbucket.md](./code-host-bitbucket.md) — Bitbucket code host
-- [code-host-gitlab.md](./code-host-gitlab.md) — GitLab code host
-- [domain.md](./domain.md) — domain doc consumer rules + layout
+| Choice | `docs/agents/` (committed) | `.claude/agents/` (local) |
+| --- | --- | --- |
+| GitHub issue tracker | [issue-tracker-github.md](./issue-tracker-github.md) | [issue-tracker-github.local.md](./issue-tracker-github.local.md) |
+| Jira issue tracker | [issue-tracker-jira.md](./issue-tracker-jira.md) | [issue-tracker-jira.local.md](./issue-tracker-jira.local.md) |
+| Local-markdown issue tracker | [issue-tracker-local.md](./issue-tracker-local.md) | none |
+| GitHub code host | [code-host-github.md](./code-host-github.md) | [code-host-github.local.md](./code-host-github.local.md) |
+| Bitbucket code host | [code-host-bitbucket.md](./code-host-bitbucket.md) | [code-host-bitbucket.local.md](./code-host-bitbucket.local.md) |
+| GitLab code host | [code-host-gitlab.md](./code-host-gitlab.md) | [code-host-gitlab.local.md](./code-host-gitlab.local.md) |
+| Domain docs | [domain.md](./domain.md) | none |
 
-For "other" issue trackers or code hosts, write the relevant `docs/agents/` file from scratch using the user's description.
+Keep tool names and commands out of the committed files. If the developer doesn't use the template's CLI, write the local file from their description.
+
+For "other" issue trackers or code hosts, write both files from scratch using the user's description, with the same split and the same "How your machine talks to …" pointer section as the templates.
+
+Before writing any `.local.md` file, check it will stay out of git: `git check-ignore -q .claude/agents/issue-tracker.local.md`. If it isn't ignored, add `.claude/agents/*.local.md` to `.gitignore`.
 
 ### 5. Done
 
-Tell the user the setup is complete and which engineering skills will now read from these files. Mention they can edit `docs/agents/*.md` or `CONTRIBUTING.md` directly later — re-running this skill is only necessary if they want to switch issue trackers, change code host, change workflow conventions, or restart from scratch.
+Tell the user the setup is complete and which engineering skills will now read from these files. Mention that other developers on the repo can run this skill to write just their own `.local.md` files. Mention they can edit `docs/agents/*.md`, `.claude/agents/*.local.md`, or `CONTRIBUTING.md` directly later — re-running this skill is only necessary if they want to switch issue trackers, change code host, change workflow conventions, or restart from scratch.
