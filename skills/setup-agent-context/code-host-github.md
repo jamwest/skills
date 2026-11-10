@@ -7,7 +7,7 @@ see below.
 ## How your machine talks to GitHub
 
 Each developer reaches GitHub their own way (the `gh` CLI, a GitHub MCP, the web UI).
-The commands for this machine live in `.claude/agents/code-host.local.md`, which is gitignored.
+The commands for this machine live in `.claude/agent-context/code-host.local.md`, which is gitignored.
 Read it before you call anything. If it's missing, ask the developer how they reach GitHub, and
 offer to write it with `/setup-agent-context`.
 

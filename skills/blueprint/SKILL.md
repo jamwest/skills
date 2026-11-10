@@ -19,7 +19,7 @@ what the issue tracker entry created in step 7 and the resulting PR are for.
 
 Check whether these exist at the repo root, and read whichever are present:
 
-- `docs/agents/issue-tracker.md` — determines what to offer when publishing (GitHub issue or Jira epic/story). Publish with the commands in the `.claude/agents/issue-tracker.local.md` it points to
+- `docs/agents/issue-tracker.md` — determines what to offer when publishing (GitHub issue or Jira epic/story). Publish with the commands in the `.claude/agent-context/issue-tracker.local.md` it points to
 - `docs/agents/domain.md` — confirms whether `CONTEXT.md` is single or multi-context
 - `CONTEXT.md` — read for domain vocabulary; use it consistently throughout every blueprint
 

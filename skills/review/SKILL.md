@@ -31,7 +31,7 @@ Before going further, confirm the fixed point resolves (`git rev-parse <fixed-po
 
 Look for the originating spec, in this order:
 
-1. Issue references in the commit messages or branch name (`#123`, `Closes #45`) — fetch the full issue via the workflow in `docs/agents/issue-tracker.md`, using the commands in the `.claude/agents/issue-tracker.local.md` it points to.
+1. Issue references in the commit messages or branch name (`#123`, `Closes #45`) — fetch the full issue via the workflow in `docs/agents/issue-tracker.md`, using the commands in the `.claude/agent-context/issue-tracker.local.md` it points to.
 2. A path the user passed as an argument.
 3. A blueprint file under `.claude/blueprints/` matching the branch name or feature (the output of `/blueprint`, which `/break-it-down` turns into the issue this branch implements).
 4. If nothing is found, ask the user where the spec is. If they say there isn't one, the **Spec** sub-agent is skipped and the report says so — never infer requirements from the code.

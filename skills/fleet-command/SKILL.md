@@ -33,7 +33,7 @@ but fanned out across agents instead of one session at a time.
 - `docs/agents/issue-tracker.md` — required to fetch the parent ticket and its subtasks. If
   missing, stop: _"This repo hasn't been initialised. Run `/setup-agent-context` first."_
 - `docs/agents/code-host.md` — needed later for pushing branches and opening PRs.
-- `.claude/agents/issue-tracker.local.md` and `.claude/agents/code-host.local.md` — this
+- `.claude/agent-context/issue-tracker.local.md` and `.claude/agent-context/code-host.local.md` — this
   machine's commands for both, which the two docs above point to.
 - `CONTRIBUTING.md` — base branch, branch naming prefix (`feat/`, `fix/`), and commit format.
 
@@ -122,7 +122,7 @@ For each subtask in the current layer, up to the concurrency cap at a time:
    - The subtask's key. For a local-markdown tracker, the **absolute path to the issue file in the
      main working copy**, not a copy inside the worktree: tracker files are usually gitignored, so
      a copy disappears with the worktree, taking the agent's status and comment updates with it.
-   - The absolute paths to `.claude/agents/issue-tracker.local.md` and `code-host.local.md` in the
+   - The absolute paths to `.claude/agent-context/issue-tracker.local.md` and `code-host.local.md` in the
      main working copy. They're gitignored, so the worktree doesn't have them
    - What its base already contains: which blockers' work is merged in and what each provides
      (components, interfaces, files moved), so it doesn't rebuild or work around them

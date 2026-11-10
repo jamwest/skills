@@ -16,7 +16,7 @@ the frontier.
 
 The tracker mechanics — how the map, its tickets, blocking, and frontier queries are actually
 expressed — are tracker-specific. Read `docs/agents/issue-tracker.md`'s "Wayfinding operations"
-section before doing anything below, and the commands in the `.claude/agents/issue-tracker.local.md`
+section before doing anything below, and the commands in the `.claude/agent-context/issue-tracker.local.md`
 it points to. Run `/setup-agent-context` first if `docs/agents/issue-tracker.md` doesn't exist.
 
 ## Plan, don't do

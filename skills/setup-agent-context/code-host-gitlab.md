@@ -7,7 +7,7 @@ reaching GitLab live on each developer's machine — see below.
 ## How your machine talks to GitLab
 
 Each developer reaches GitLab their own way (the `glab` CLI, a GitLab MCP, the web UI).
-The commands for this machine live in `.claude/agents/code-host.local.md`, which is gitignored.
+The commands for this machine live in `.claude/agent-context/code-host.local.md`, which is gitignored.
 Read it before you call anything. If it's missing, ask the developer how they reach GitLab, and
 offer to write it with `/setup-agent-context`.
 

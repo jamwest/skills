@@ -7,7 +7,7 @@ below.
 ## How your machine talks to GitHub
 
 Each developer reaches GitHub their own way (the `gh` CLI, a GitHub MCP, the web UI). The
-commands for this machine live in `.claude/agents/issue-tracker.local.md`, which is gitignored.
+commands for this machine live in `.claude/agent-context/issue-tracker.local.md`, which is gitignored.
 Read it before you call anything. If it's missing, ask the developer how they reach GitHub, and
 offer to write it with `/setup-agent-context`.
 
