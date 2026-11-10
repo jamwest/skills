@@ -130,7 +130,7 @@ What you may change depends on where the code sits:
 | --- | --- |
 | Code this task added or changed | Any refactor that keeps tests green — extract, deepen, rename, move. |
 | Elsewhere in files the task already touched | Small, local "leave it better than you found it" tidies: a clearer name, dead code removed, a tiny extract next to your change. Nothing that changes an interface another file depends on. |
-| Files the task didn't touch | Nothing, except the second-copy rule below. Record what you noticed for the report. |
+| Files the task didn't touch | Nothing, except the second-copy rule and the look-back below. Record what you noticed for the report. |
 
 **Second copy.** If the diff adds the second copy of something that already exists — a lookup
 table, a formatter, a type, a helper — extract one shared version and point both copies at it,
@@ -142,7 +142,28 @@ the only one placed to notice it.
 **Seam candidates.** If the work exposes an obvious missing seam or a shallow module in existing
 code, decide. If it's confined and makes this change clearly simpler, build it now. Otherwise
 leave it, and record it in the report as a decision for `/deepen`: where it is, what the seam
-would be, roughly which files it'd touch, and why you didn't build it.
+would be, roughly which files it'd touch, and why you didn't build it. The look-back below is the
+exception.
+
+**Look back at how hard the change was.** Count the files the change touched
+(`git diff --stat <start-sha>` plus untracked files) and ask why there are that many. If the
+count comes from repeated wiring (each caller sets up the same thing itself), or from tests that
+break on argument positions or mock shape, the code was missing a seam. Build the seam that would
+have made the change small, even in files the task didn't otherwise touch:
+
+1. Tell the user in one line what you're doing and why, e.g. _"The change touches 12 cron files
+   because each job wires its own queue. Adding a shared `startCronJob` first."_ Don't wait for
+   permission.
+2. Set the change aside: `git stash push --include-untracked`.
+3. Refactor on clean code, with no behaviour change. Run the full suite after each step.
+4. Commit the refactor on its own, in `CONTRIBUTING.md`'s commit format (a `refactor` commit).
+5. Put the change back with `git stash pop`, move it onto the new seam, and run the full suite.
+   Leave the change uncommitted, so it lands as its own commit on top of the refactor.
+6. Note the file counts for the report: the change before the refactor, the change after it
+   (`git diff --stat HEAD`), and the refactor commit.
+
+This is the only commit this skill makes. Steps 7 and 8 still diff against `<start-sha>`, so the
+refactor commit is included.
 
 **Never refactor while RED.** Run the full test suite after each refactor step.
 
@@ -180,11 +201,10 @@ Before review, list everything the task changed: `git diff --stat <start-sha>` p
 `git status --short` for new untracked files.
 
 For each file, confirm it's either one step 3 expected, one the work genuinely needed (a new
-test file, a wiring change), a step 5 tidy in an already-touched file, or a step 5 second-copy
-extraction. Anything else — a
-"while I was here" fix, an unrelated formatting change, a refactor in a file the task didn't
-otherwise need — revert it and add it to the report instead. Re-run the full suite after any
-revert.
+test file, a wiring change), a step 5 tidy in an already-touched file, a step 5 second-copy
+extraction, or part of a step 5 look-back refactor commit. Anything else — a "while I was here"
+fix, an unrelated formatting change, a refactor in a file the task didn't otherwise need — revert
+it and add it to the report instead. Re-run the full suite after any revert.
 
 ### 8. Review once, fix once
 
@@ -196,9 +216,10 @@ the code.
 
 Brief the `/review` subagent explicitly, since none of this is otherwise discoverable:
 
-- **Fixed point**: `<start-sha>` from step 1. This task hasn't been committed, so tell the
-  subagent to diff with `git diff <start-sha>` (working tree included) instead of review's usual
-  three-dot `...HEAD` form — there's no merge-base to diff against yet.
+- **Fixed point**: `<start-sha>` from step 1. The task is mostly uncommitted (only a step 5
+  look-back refactor, if any, is committed), so tell the subagent to diff with
+  `git diff <start-sha>` (working tree included) instead of review's usual three-dot `...HEAD`
+  form.
 - **Spec**: the issue/blueprint content already fetched in step 2. Skip review's own spec-source
   discovery entirely — the spec is already known.
 
@@ -206,7 +227,7 @@ Brief the `/brittle-tests` subagent:
 
 - **Fixed point**: the same `<start-sha>`, with the same two-dot override — tell it to diff with
   `git diff <start-sha>` (working tree included) instead of its usual three-dot form, for the same
-  reason: nothing is committed yet.
+  reason.
 
 From the reports that come back:
 
@@ -253,11 +274,14 @@ Report:
   with the scenario and why it wasn't fixed (see above). Write "none" if there are none
 - Decisions, in the Chose / Why / Impact form above
 - Make it fast: what was optimised and the measurement, or that it was skipped and why
+- Look-back: the file counts from step 5 if a refactor was built (e.g. _"change touched 12 files;
+  after the `startCronJob` refactor (9 files), it touches 3"_), or _"no refactor — N files, each
+  needed"_
 - Seam candidates left for `/deepen`, with why each wasn't built
 - Anything reverted by step 7 as out of scope
 - If the run hit real friction — the second review round still flagged findings, step 7 reverted
-  files, or a lot of effort went into finding something — one line suggesting `/retro`, naming
-  the friction. Don't run it; it's the user's call.
+  files, the look-back found a missing seam, or a lot of effort went into finding something — one
+  line suggesting `/retro`, naming the friction. Don't run it; it's the user's call.
 
 Then note that opening the PR (`/pr-description`), cleaning up history (`/tidy-branch`), and
 closing the issue stay the user's call, made one at a time — this skill doesn't chain into any of them on its own.
