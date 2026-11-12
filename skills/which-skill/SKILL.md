@@ -65,6 +65,9 @@ itself once a build spans more than one sitting or needs a paper trail.
   finding is an architecture problem, not a one-off defect.
 - **A UI change needs proof it works** → `/ui-evidence`, standalone or pulled in automatically by
   `/pr-description`.
+- **Reviewing a teammate's PR** → `/pr-review`. Checks your concerns against the code, gives
+  make it work / right / fast verdicts, drafts Conventional Comments, and posts only after you
+  approve. Not for your own branch — that's `/review`.
 - **The work needs to travel** — new harness, new directory, a colleague, or forking a side task
   while you keep going — → `/handoff`. Writes a portable file by default; forks into a live
   background agent instead when you're staying in this session and directory. For the ordinary
