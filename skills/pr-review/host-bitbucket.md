@@ -4,17 +4,26 @@ Use `atlassian-cli bb`. If it isn't installed (`command -v atlassian-cli`), give
 
 ## Fetch
 
+Use `-f json`. The default table output wraps and truncates a long description.
+
 ```sh
-atlassian-cli bb pr get <repo> <id>          # title, description, source, destination, reviewers
-atlassian-cli bb pr comments <repo> <id>     # existing comments, with author and location
+atlassian-cli bb pr get <repo> <id> -f json \
+  | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d["title"], d["author"], d["source"], d["destination"], sep="\n"); print(d["description"])'
+atlassian-cli bb pr comments <repo> <id> -f json \
+  | python3 -c 'import json,sys
+for c in json.load(sys.stdin): print("---", c["id"], c["author"], c["location"], "parent", c["parent"]); print(c["content"])'
+
+B=origin/<source-branch>
 git fetch origin <source-branch>
-MB=$(git merge-base origin/<destination> origin/<source-branch>)
-git log --oneline $MB..origin/<source-branch>
-git diff --stat $MB origin/<source-branch>
-git show origin/<source-branch>:<path>       # read a file on the PR side without checking it out
+MB=$(git merge-base origin/<destination> "${B}")
+git log --oneline $MB.."${B}"
+git diff --stat $MB "${B}"
+git show "${B}:<path>"                       # read a file on the PR side without checking it out
 ```
 
-The comments output is a wide table and can be large. If the tool saves it to a file, read only the author and content columns. Bot comments end with a `<!-- cra:... -->` marker.
+Always write `"${B}:<path>"` with braces. In zsh, `$B:e` is a modifier (the extension of `$B`), so `"$B:evals/x.ts"` becomes a broken path. Also don't start a word with `=` (for example `echo ===`): zsh expands `=word` to a command path and fails.
+
+Bot comments end with a `<!-- cra:... -->` marker. `location` is `path:line` for an inline comment and `null` for a top-level one.
 
 ## Post
 
@@ -27,3 +36,14 @@ atlassian-cli bb pr comment <repo> <id> -f quiet --text "$(cat 3.md)" --parent <
 ```
 
 `--line` is a line in the PR's version of the file (`--side new`, the default). An inline comment can only go on a file the PR changes.
+
+## Review status
+
+Set only the status the user chose in step 6:
+
+```sh
+atlassian-cli bb pr approve <repo> <id>
+atlassian-cli bb pr unapprove <repo> <id>
+atlassian-cli bb api -X post /2.0/repositories/<workspace>/<repo>/pullrequests/<id>/request-changes     # no typed command for this
+atlassian-cli bb api -X delete /2.0/repositories/<workspace>/<repo>/pullrequests/<id>/request-changes   # undo it
+```

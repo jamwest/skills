@@ -57,4 +57,6 @@ Then stop and wait. The user may approve, edit, drop or relabel comments.
 
 ### 6. Post
 
-Only after the user approves, post each comment with the command in [host-bitbucket.md](./host-bitbucket.md), using the wording the user approved. Report a table: number, anchor, label, and whether it posted. Show any failure in full. Don't set the PR's review status (approve / request changes) unless the user asks.
+Post nothing until the user approves the drafts. Then, before posting, ask the user what to do with the PR's review status: approve, request changes, or just post the comments. Recommend the option that matches your verdict from step 4. Skip the question if the user already said.
+
+Then post each comment with the command in [host-bitbucket.md](./host-bitbucket.md), using the wording the user approved. Set the review status the user chose, after the comments are posted. Report a table: number, anchor, label, and whether it posted, then the review status you set. Show any failure in full.
