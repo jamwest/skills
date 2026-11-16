@@ -76,15 +76,17 @@ Every prompt must end with: _"Do not invoke `/review` or spawn additional agents
 
 - The diff command and commit list.
 - The path or fetched contents of the spec.
+- Any overrides the caller passed (decisions that changed the spec). Report each difference from the spec text anyway, labelled "override, issue needs updating".
 - The brief: "Report: (a) requirements the spec asked for that are missing or partial; (b) behaviour in the diff that wasn't asked for (scope creep); (c) requirements that look implemented but where the implementation looks wrong. Quote the spec line for each finding. Under 400 words."
 
 **Behaviour sub-agent prompt** — include:
 
 - The diff command and commit list. No spec: this axis judges the code against what it does, not what was asked, and reads surrounding code as needed to trace each path.
-- The brief: "Check the diff for three things.
+- The brief: "Check the diff for four things.
   (a) **Paths.** For each entry point the diff adds or changes (server function, route handler, exported function), list its outcome branches (e.g. created, linked, restored, refused). Flag any branch that skips a step its sibling branches do — saving an answer, crediting, writing the session, recording an audit.
   (b) **Repeats and partial failure.** For each sequence of writes or external calls, ask: what if the same request runs twice at once? What if it fails between steps? Flag any state left half-written, duplicated or orphaned, and any two writes in separate transactions that must succeed or fail together.
   (c) **Failure the user sees.** For each failure return or caught error, trace it to what the user is shown. Flag a message that blames the wrong thing, a failure swallowed with nothing shown, and a retry that cannot succeed.
+  (d) **States the diff reads.** For each stored state or enum value the diff displays, counts or branches on, find every place that writes it, including code outside the diff and in other apps (grep the column or value). For the situation the UI or docs say the value stands for, confirm a writer actually leaves it in place, including after a rollback or a failure part-way. Flag a value that no path can produce in that situation, citing the writer's file:line.
   Each finding cites file:line and gives a concrete scenario ('two submits from one account: …'). A Behaviour finding is never a judgement call — the scenario is real or it isn't. Never label a finding 'edge case' or 'low risk' to soften it. Under 400 words."
 
 If the spec is missing, skip the Spec sub-agent and note this in the final report. Standards and Behaviour still run.
