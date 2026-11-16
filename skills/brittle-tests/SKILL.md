@@ -1,6 +1,6 @@
 ---
 name: brittle-tests
-description: Scan test files — from a diff, the whole suite, or a given path/glob — for brittle-test anti-patterns (testing implementation instead of behavior, fragile UI locators, fixed sleeps/waits, hardcoded test data) and report findings with file:line, why it's brittle, and a suggested fix, ranked by confidence. Use when the user wants to audit test quality/reliability, mentions tests breaking on unrelated refactors, or asks to check for brittle or flaky-adjacent tests.
+description: Scan test files — from a diff, the whole suite, or a given path/glob — for brittle-test anti-patterns (testing implementation instead of behavior, fragile UI locators, fixed sleeps/waits, hardcoded test data) and blind tests that stay green when the code they cover is removed, and report findings with file:line, why it's brittle, and a suggested fix, ranked by confidence. Use when the user wants to audit test quality/reliability, mentions tests breaking on unrelated refactors, or asks to check for brittle or flaky-adjacent tests.
 subagent-role: reviewer
 argument-hint: "fixed point to diff against (default), 'all' to scan the whole test suite, or a file/glob to target specific tests"
 ---
@@ -9,7 +9,9 @@ argument-hint: "fixed point to diff against (default), 'all' to scan the whole t
 
 A **brittle test** fails when the code under test is still correct — usually after a refactor, a styling tweak, or an internal implementation change that doesn't affect user-facing behavior. This is distinct from a **flaky test**, which fails intermittently on completely unchanged code; flaky tests are a timing/isolation problem, not a scope for this skill.
 
-This skill scans test files for four anti-patterns known to cause brittleness, and reports what it finds — it does not rewrite tests. Fixing is a deliberate follow-up step the user drives.
+The opposite failure matters as much: a **blind test** passes when the code under test is wrong. It stays green with the line it was written for deleted, so CI can't see a regression.
+
+This skill scans test files for four anti-patterns known to cause brittleness and one that makes tests blind, and reports what it finds — it does not rewrite tests. Fixing is a deliberate follow-up step the user drives.
 
 ## Process
 
@@ -28,16 +30,25 @@ If no test files are found in scope, say so and stop — don't scan production c
 
 ### 2. Scan against the brittleness baseline
 
-Read each target file and check it against the four categories below. Like `review`'s smell baseline, each is a judgement call, not a hard violation — a test can look like it matches a pattern and still be the right call for that codebase. Flag it anyway and let the user decide; don't silently suppress based on your own guess about intent.
+Read each target file and check it against the five categories below. Like `review`'s smell baseline, each is a judgement call, not a hard violation — a test can look like it matches a pattern and still be the right call for that codebase. Flag it anyway and let the user decide; don't silently suppress based on your own guess about intent.
 
-- **Implementation over behavior** — the test asserts *how* the code works instead of *what it returns or does*: exact internal call counts/order, private method invocations, exact query strings, snapshots of internal structures rather than outputs. → Fix: assert on the observable output or effect instead.
+- **Implementation over behavior** — the test asserts *how* the code works instead of *what it returns or does*: exact internal call counts/order, private method invocations, exact query strings, snapshots of internal structures rather than outputs. → Fix: assert on the observable output or effect instead. **Not this category:** asserting the arguments a unit passes across a boundary it doesn't own (the ids sent to the database, the payload sent to an API). That is the unit's behaviour. Never suggest dropping such an assertion.
 - **Fragile locators** — UI/DOM selectors tied to structure rather than meaning: positional XPath (`/html/body/div[2]/...`), `nth-child` chains, deep CSS descendant chains. → Fix: use semantic selectors — role, label, text, or a dedicated test attribute (e.g. `data-testid`).
 - **Fixed waits** — hardcoded sleep/delay instead of waiting on a condition: `waitForTimeout(N)`, `sleep(N)`, `Thread.sleep(N)`, `time.sleep(N)`. → Fix: wait on the actual condition (element visible, request resolved, state changed) instead of a duration.
 - **Hardcoded test data assumptions** — the test assumes specific data pre-exists in a shared fixture or database (a literal user ID, email, row) rather than creating and cleaning up its own. → Fix: have the test create its own isolated data (factory, fixture builder) and tear it down (transactional rollback or explicit cleanup).
 
+- **Blind tests** — the test stays green if the code it covers is deleted or inverted. Look for:
+  - Test data already in the order the code sorts into, or only one row where the code picks between several. The sort or filter is never exercised.
+  - A negative assertion whose matcher can't match the thing it guards against (a regex or text that differs from the real label).
+  - A page-wide query (`getByText`, `getAllBy…`) when several rows or items render. It can't tell which item got which value.
+  - A fallback or empty-state assertion that also passes while loading, with no wait for the failure or result first.
+  - A mock that returns a shape the real dependency never returns (missing `id`, wrong type), so the code path that uses it isn't the one production runs.
+  - A behaviour the diff adds (an option, a field on a second query, a second component variant) with no test at all.
+  → Fix: change the data or the assertion so the test goes red when the line is removed, and say which line to delete to check it.
+
 ### 3. Rate confidence per finding
 
-- **High** — an unambiguous instance: a literal `sleep`/`waitForTimeout` call, a positional XPath, a snapshot of an internal object graph.
+- **High** — an unambiguous instance: a literal `sleep`/`waitForTimeout` call, a positional XPath, a snapshot of an internal object graph, a blind test where you can name the line whose removal stays green.
 - **Medium** — matches the pattern but plausibly intentional (e.g. asserting a mock was called once, which is sometimes exactly the right contract to test).
 - **Low** — a judgement call that depends on context the scan can't see (e.g. a hardcoded ID that might be a documented seed-data convention for this repo).
 
