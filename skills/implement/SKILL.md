@@ -48,6 +48,12 @@ Check whether an argument was passed:
 - **No argument** — ask: _"What are we implementing? Paste a task description or give me an
   issue key."_
 
+**Overrides.** If the brief, the user, or an earlier decision changes what the issue asks for
+(a bullet dropped, a value added, a rule reversed), list each change as an override: the issue's
+wording, the new decision, and who made it. The issue is now out of date. The Spec review in
+step 8 gets the list, and the report names it under **Ticket out of date** so the issue gets
+updated before the PR, not after a reviewer finds the gap.
+
 A usable task must have: a clear title, what done looks like, and at least one implied public
 interface. If these are present, proceed directly to step 3 without asking.
 
@@ -114,6 +120,15 @@ Rules per cycle:
 - Tests use public interfaces only — no testing of internal collaborators
 - Don't anticipate future tests
 - If a new test passes without any code change, the behavior was already covered — move on
+- RED must fail for the reason the test names. A test that fails because of something else
+  (a missing column, an older query that filters differently) proves nothing about the code you
+  are about to write. Read the failure message before writing the code
+- **Prove each decision after GREEN.** For each decision line this cycle added (a sort order, a
+  filter, a branch, an argument passed on, a fallback, a refetch option), delete or invert it and
+  run the tests. At least one must go red. If none does, the test data can't tell the cases apart:
+  change it (for example store the rows in the opposite order to the one the code sorts into)
+  until one goes red, then restore the line. Code added several lines at once gets this check one
+  line at a time
 - TIDY is local: rename, inline, remove duplication *within this cycle's code*. No new
   abstractions, no touching code from earlier cycles or existing files — that's step 5.
 - Run the full test suite after each GREEN and each TIDY to confirm no regressions
@@ -221,8 +236,10 @@ Brief the `/review` subagent explicitly, since none of this is otherwise discove
   look-back refactor, if any, is committed), so tell the subagent to diff with
   `git diff <start-sha>` (working tree included) instead of review's usual three-dot `...HEAD`
   form.
-- **Spec**: the issue/blueprint content already fetched in step 2. Skip review's own spec-source
-  discovery entirely — the spec is already known.
+- **Spec**: the issue/blueprint content already fetched in step 2, plus the overrides list from
+  step 2. Skip review's own spec-source discovery entirely — the spec is already known. Tell the
+  Spec sub-agent to review against the issue text and report every difference, including ones an
+  override explains. Those are labelled "override, issue needs updating", not dropped.
 
 Brief the `/brittle-tests` subagent:
 
@@ -268,8 +285,15 @@ Escalate as a question only what is genuinely the user's call: a choice that con
 or blueprint, product or copy direction the spec doesn't cover and that can't be undone cheaply,
 or an irreversible or outward-facing action. Even then, say what you'd choose and why.
 
+**When step 8 can't run.** A forked agent, or any agent without the Agent tool, cannot spawn the
+review subagents. Don't skip step 8 quietly. Put **Review not run** as the first line of the
+report, with the fixed point, so whoever reads it runs `/review` and `/brittle-tests` before the
+PR. This applies to rework too: any later change to this task's code (a rework after a user
+decision, a fix-up, a refactor pass) ends with step 8 against the commit the change started from.
+
 Report:
 
+- **Ticket out of date**: each override from step 2, or "none"
 - What got fixed, and anything either review still flags (with its citations)
 - **Known defects**: every Spec "wrong" or Behaviour finding left unfixed, quoted word for word,
   with the scenario and why it wasn't fixed (see above). Write "none" if there are none
@@ -295,6 +319,8 @@ user's call.
 [ ] Test describes behavior, not implementation
 [ ] Test uses public interface only
 [ ] Test would survive an internal refactor
+[ ] RED failed for the reason the test names
+[ ] Every decision line added this cycle turns a test red when deleted or inverted
 [ ] Test creates and cleans up its own data — no hardcoded IDs/rows assumed to pre-exist
 [ ] UI/E2E tests use semantic selectors and condition-based waits, not positional locators or fixed sleeps
 [ ] Code is minimal for this test
