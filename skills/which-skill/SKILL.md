@@ -65,6 +65,9 @@ itself once a build spans more than one sitting or needs a paper trail.
   finding is an architecture problem, not a one-off defect.
 - **A UI change needs proof it works** → `/ui-evidence`, standalone or pulled in automatically by
   `/pr-description`.
+- **Deciding what to pick up next** → `/inbox`. Sessions waiting on you, PRs to review or
+  re-review, your PRs with changes requested or approved, and Jira, most blocking first. Read-only;
+  suggests the next command (often `/pr-review <id>`). Needs command-center installed.
 - **Reviewing a teammate's PR** → `/pr-review`. Checks your concerns against the code, gives
   make it work / right / fast verdicts, drafts Conventional Comments, and posts only after you
   approve. Not for your own branch — that's `/review`.
