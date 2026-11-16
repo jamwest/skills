@@ -152,6 +152,13 @@ When an agent reports done:
   give the user from now on, until the user decides on each one. Never summarise, merge, reword
   or drop them — a defect compressed into "low risk, not fixed" is a defect lost.
 
+**Rework after a user decision.** When a decision changes a finished subtask (a redesign, a dropped
+requirement, a new state), dispatch it again as `/implement <subtask-key>` in a worktree on that
+subtask's branch. Pass the decisions as the overrides list for `/implement` step 2. Don't send a
+free-form "make these changes" prompt: it skips step 8, so the reworked code ships with less review
+than the first version. A fork can't spawn the review subagents. If you use one, run `/review` and
+`/brittle-tests` yourself on its output before you report it done.
+
 **When the user decides a Known defect**, check their reason against how the defect works before
 recording it as decided. If the reason contradicts the scenario (e.g. "the unique ID means this
 can't happen" when the unique constraint is what produces the orphan), say so plainly, explain the
