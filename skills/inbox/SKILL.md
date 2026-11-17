@@ -35,7 +35,7 @@ With an argument, show only that part: `prs` (to review + mine), `sessions`, or 
 1. Sessions with `state: "waiting"`: `project (worktree) · branch — message`, with `(worktree)` only when `worktree` is set.
 2. `toReview` with `action: "re-review"`: new commits since the user last reviewed.
 3. `toReview` with `action: "review"`.
-4. `mine` that needs fixing: `status.kind: "changes-requested"` (naming `status.by`), `build.state: "failed"` (naming `build.failed`), or `conflicts > 0`. One line per PR listing every problem.
+4. `mine` that needs fixing: `status.kind: "changes-requested"` (naming `status.by`), `build.state: "failed"` (naming `build.failed`), or `conflicts > 0` (name the files in `conflictFiles`). One line per PR listing every problem. `conflicts: null` means unknown, because there's no local clone to check against. Don't report it as clean.
 
 Mark any `toReview` PR whose `build.state` is `"failed"` with "build failing". It may not be worth reviewing yet.
 
