@@ -164,6 +164,26 @@ export async function open({ out = '.claude/ui', viewport = kViewport, chromePat
       return file;
     },
 
+    // The box to draw on a screenshot, in CSS pixels of the page. Read it in
+    // the same state you shoot, so the box lands on what the shot shows.
+    rect: async (selector) => {
+      const box = await evaluate(
+        `(() => { const e = document.querySelector(${JSON.stringify(selector)}); if (!e) return null; const r = e.getBoundingClientRect(); return { x: r.x + scrollX, y: r.y + scrollY, w: r.width, h: r.height }; })()`,
+      );
+      if (!box) throw new Error(`nothing matched ${selector}`);
+      return box;
+    },
+
+    pdf: async (file) => {
+      const { data } = await send('Page.printToPDF', {
+        printBackground: true,
+        preferCSSPageSize: true,
+      });
+      await writeFile(file, Buffer.from(data, 'base64'));
+      console.log('pdf', file);
+      return file;
+    },
+
     sleep,
 
     close: async () => {

@@ -1,6 +1,6 @@
 ---
 name: ui-evidence
-description: Prove a finished UI change actually works by driving a browser against the user's localhost dev server — a private headless Chrome by default, or their real signed-in Chrome when the app sits behind a login you must not type past — capturing screenshots as evidence into .claude/ui/ (or .claude/pr/<slug>/ when called from pr-description), and sending them back as captioned PNGs plus a paste-ready markdown block for a PR description. Use this at the end of ANY implementation whose effect is visible in a browser page — a component, route, style, form, copy change, layout fix — even when the user never mentions screenshots or testing. Also use when the user says "dev test", "verify in the UI", "screenshot the change", "prove it works", or asks for evidence a change landed.
+description: Prove a finished UI change actually works by driving a browser against the user's localhost dev server — a private headless Chrome by default, or their real signed-in Chrome when the app sits behind a login you must not type past — capturing screenshots as evidence into .claude/ui/ (or .claude/pr/<slug>/ when called from pr-description), and combining them into one annotated PDF (captions plus numbered boxes on what changed) with a paste-ready markdown block for a PR description. Use this at the end of ANY implementation whose effect is visible in a browser page — a component, route, style, form, copy change, layout fix — even when the user never mentions screenshots or testing. Also use when the user says "dev test", "verify in the UI", "screenshot the change", "prove it works", or asks for evidence a change landed.
 subagent-role: worker
 argument-hint: "optional output directory (defaults to .claude/ui/ in the repo; pr-description passes .claude/pr/<slug>/)"
 compatibility: claude-code
@@ -23,7 +23,7 @@ Claude-in-Chrome tools connected, Chrome running with the user signed into the a
 Screen Recording permission granted to the app running the session. If a prerequisite is absent, name it and
 offer the user a choice rather than improvising around it — Step 3 says what that choice
 is. A teammate on Linux, or with the extension disconnected, should get one clear
-question, not a pile of failed capture attempts. Everything past capture — the markdown block, the captions — is
+question, not a pile of failed capture attempts. Everything past capture — the PDF, the markdown block, the captions — is
 plain text with no tooling dependency at all.
  
 ## Step 1 — Decide whether there's anything to see
@@ -243,44 +243,74 @@ Requirements worth knowing when something fails on the Chrome path:
   exits with this message if the capture comes back empty.
 - Exit code 2 means no tab carried the marker — navigate with the fragment, then retry.
 
-## Step 5 — Send the evidence
- 
-The PNGs already live under the output directory resolved in Step 4 — nothing more to
-write there.
- 
-The destination for this evidence is almost always a Bitbucket PR description — a
-markdown text box, not a document. The user pastes text into it and drags screenshots
-onto it directly; Bitbucket auto-hosts each dropped image and inserts its markdown for
-them. So the deliverable is PNGs plus text they can paste, not a bundled report file.
- 
-**Always** send the PNGs directly with `SendUserFile` (`display: "render"` so they show
-inline), one caption line per shot saying what it proves.
- 
-**Two or more screenshots destined for a PR description** — also send a markdown block
-shaped for pasting straight into that description:
- 
+## Step 5 — Build the PDF and send it
+
+The destination is almost always a Bitbucket PR description. Bitbucket's CLI can't
+attach files, so the user uploads by hand in the web editor — and one dropped PDF is far
+less work than several images. So **the deliverable is always one PDF**, even for a
+single shot: `<output-dir>/evidence.pdf`.
+
+**Record what changed while you capture.** For each shot, note the box around every part
+the change added or altered, in CSS pixels of the page — `page.rect(selector)` on the
+headless path, `getBoundingClientRect()` plus `scrollX/scrollY` on the Chrome path. Take
+it in the same state as the shot. Measuring by eye from the PNG works, but check the
+result (below) because it is easy to be a few pixels off and cover a label.
+
+**Write `<output-dir>/evidence.json`**, then build:
+
+```json
+{
+  "title": "GROOV-2452 | Add copy button to action plan create",
+  "summary": "Where and how it was captured: environment, viewport, flags, who was signed in.",
+  "shots": [
+    {
+      "file": "02-create-filled.png",
+      "title": "Create page, filled form",
+      "caption": "Copy button appears once a field has content.",
+      "scale": 2,
+      "highlights": [{ "x": 300, "y": 96, "w": 72, "h": 32, "label": "New: Copy button" }]
+    }
+  ]
+}
+```
+
+```bash
+node <skill-dir>/build-pdf.mjs <output-dir>/evidence.json
+```
+
+`scale` is the capture's device scale factor (2 for the headless default, usually 2 on a
+Retina Chrome). The PDF has a cover page listing the shots, then one landscape page per
+shot: title, caption, a numbered legend, the full screen with red numbered boxes, and,
+for tall phone shots, a zoomed copy of the boxed area so it can be read. Label each box
+with what is new or different ("New: …", "Now required", "Moved above ethnicity"), not
+what it is.
+
+**Check the PDF.** Render its pages and look at each one: boxes on the right element,
+no badge covering a label, nothing important cut off by the zoom. Retake or re-measure
+anything wrong. If `pdftoppm` is missing, PDFKit renders pages on macOS:
+
+```swift
+import PDFKit; import AppKit
+let doc = PDFDocument(url: URL(fileURLWithPath: CommandLine.arguments[1]))!
+for i in 0..<doc.pageCount {
+  let img = doc.page(at: i)!.thumbnail(of: NSSize(width: 1400, height: 1000), for: .mediaBox)
+  try! NSBitmapImageRep(data: img.tiffRepresentation!)!.representation(using: .png, properties: [:])!
+    .write(to: URL(fileURLWithPath: "\(CommandLine.arguments[2])/page-\(i + 1).png"))
+}
+```
+
+**Send** the PDF's path, plus this block for the PR description:
+
 ```markdown
 **UI evidence**
-
-_Create page — blank form_
-<!-- drop 01-create-blank.png here -->
-No Copy button while every field is empty, so an empty skeleton can't be copied by accident.
-
-_Create page — filled form_
-<!-- drop 02-create-filled.png here -->
-Copy button appears once a field has content.
+<!-- drop evidence.pdf here -->
+1. Create page, blank form: no Copy button while every field is empty.
+2. Create page, filled form: Copy button appears once a field has content.
 ```
- 
-One heading + placeholder comment + caption per shot, in capture order. The placeholder
-names the exact file to drop at that spot — Bitbucket assigns the real URL only once the
-user drops the image in the web editor, so there's nothing to template ahead of that.
-Keep each caption to one line; this block gets read by a human skimming the PR for
-context, not studied.
- 
-Strip `#ccshot=` markers and shorten long IDs anywhere a URL appears; they're for the
-reader's orientation, not for replay. No file gets built here — it's plain text, so
-there's nothing to render and self-check beyond reading it back once before sending.
- 
+
+One line per shot, in PDF order, each saying what it proves. Strip `#ccshot=` markers
+and shorten long IDs anywhere a URL appears.
+
 ### Captions carry the proof
  
 A caption says what the image *proves*, not what it depicts. This is the difference
