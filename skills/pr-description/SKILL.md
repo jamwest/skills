@@ -50,9 +50,12 @@ say no.
 - If yes: derive a slug for this PR — the issue key found in step 3 if there was one
   (e.g. `GROOV-2452`), otherwise the current branch name with any `/` replaced by `-`.
   Invoke `ui-evidence` with that slug as its output-directory argument:
-  `.claude/pr/<slug>/`. It writes screenshots there and returns captioned PNGs plus a
-  markdown block already shaped for a PR description — use that block as-is under an
-  "Evidence" heading. Don't re-caption or re-summarize it.
+  `.claude/pr/<slug>/`. It writes screenshots and one annotated `evidence.pdf` there, and
+  returns a markdown block already shaped for a PR description — use that block as-is
+  under an "Evidence" heading. Don't re-caption or re-summarize it.
+- If `ui-evidence` can't run (no dev server, services down, a broken local database),
+  **stop and tell the user before anything is pushed or opened**, so they can start
+  what's missing. Don't push first and note the gap in the PR afterwards.
 - If `ui-evidence` comes back without screenshots because the user chose to skip them,
   omit the Evidence heading and say in your handover that the description is going out
   unverified in a browser. Don't leave an empty heading, and don't imply shots exist.
@@ -83,8 +86,9 @@ option.
   "..."`, `gh pr edit --body "..."`). Run that command only
   after they say yes *for this run* — a prior yes doesn't carry forward.
 - If they decline or don't say, leave the draft as text. They paste it into the PR
-  description themselves, dropping each `ui-evidence` screenshot at its placeholder
-  comment.
+  description themselves.
+- Either way, the evidence PDF has to be dropped into the PR in the web editor by hand —
+  the CLI can't attach it. Give the user its path and say where it goes.
 
 ## Finally
 
