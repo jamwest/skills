@@ -50,7 +50,7 @@ say no.
 - If yes: derive a slug for this PR — the issue key found in step 3 if there was one
   (e.g. `GROOV-2452`), otherwise the current branch name with any `/` replaced by `-`.
   Invoke `ui-evidence` with that slug as its output-directory argument:
-  `.claude/pr/<slug>/`. It writes screenshots and one annotated `evidence.pdf` there, and
+  `.claude/pr/<slug>/`. It writes screenshots there, and one annotated PDF to `~/Desktop/PR evidence/<slug>.pdf`, and
   returns a markdown block already shaped for a PR description — use that block as-is
   under an "Evidence" heading. Don't re-caption or re-summarize it.
 - If `ui-evidence` can't run (no dev server, services down, a broken local database),
@@ -88,8 +88,8 @@ option.
 - If they decline or don't say, leave the draft as text. They paste it into the PR
   description themselves.
 - Either way, the evidence PDF has to be attached to the PR in the web UI by hand — the
-  CLI can't attach it, and Bitbucket shows only images inline. Give the user its full
-  `~/…` path and remind them to attach it.
+  CLI can't attach it, and Bitbucket shows only images inline. It is in
+  `~/Desktop/PR evidence/<slug>.pdf`; name it and remind the user to attach it.
 
 ## Finally
 

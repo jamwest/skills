@@ -248,7 +248,11 @@ Requirements worth knowing when something fails on the Chrome path:
 The destination is almost always a Bitbucket PR description. Bitbucket's CLI can't
 attach files, so the user uploads by hand in the web editor — and one dropped PDF is far
 less work than several images. So **the deliverable is always one PDF**, even for a
-single shot: `<output-dir>/evidence.pdf`.
+single shot. Write it to `~/Desktop/PR evidence/<slug>.pdf`, where `<slug>` is the issue key
+(or the branch name with `/` replaced by `-`). Bitbucket attaches files through a file
+picker, not drag and drop, and a picker opens on the Desktop; one folder with one PDF
+per ticket is quick to find there. The screenshots and `evidence.json` stay in the output
+directory.
 
 **Record what changed while you capture.** For each shot, note the box around every part
 the change added or altered, in CSS pixels of the page — `page.rect(selector)` on the
@@ -275,7 +279,8 @@ result (below) because it is easy to be a few pixels off and cover a label.
 ```
 
 ```bash
-node <skill-dir>/build-pdf.mjs <output-dir>/evidence.json
+mkdir -p ~/Desktop/"PR evidence"
+node <skill-dir>/build-pdf.mjs <output-dir>/evidence.json ~/Desktop/"PR evidence"/<slug>.pdf
 ```
 
 `scale` is the capture's device scale factor (2 for the headless default, usually 2 on a
@@ -305,12 +310,12 @@ for i in 0..<doc.pageCount {
 }
 ```
 
-**Send** the PDF's full path from the home folder (`~/…`), plus this block for the PR
-description. Bitbucket shows only images inline; a PDF is an attachment on the PR, so
+**Send** the PDF's name (`PR evidence/<slug>.pdf` on the Desktop), plus this block for the
+PR description. Bitbucket shows only images inline; a PDF is an attachment on the PR, so
 the block says it is attached rather than leaving a spot to drop it:
 
 ```markdown
-UI evidence is attached (`evidence.pdf`):
+UI evidence is attached (`GROOV-2452.pdf`):
 
 1. Create page, blank form: no Copy button while every field is empty.
 2. Create page, filled form: Copy button appears once a field has content.
