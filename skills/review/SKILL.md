@@ -1,6 +1,6 @@
 ---
 name: review
-description: Review the diff between HEAD and a fixed point (commit, branch, tag, or merge-base) along three axes — Standards (does the code follow this repo's documented coding standards?), Spec (does the code match what the originating issue or blueprint asked for?), and Behaviour (is it correct on the paths the spec doesn't list — sibling branches, concurrent repeats, partial failure, the error the user sees?). Runs each axis as a parallel sub-agent so none sees another's reasoning, then reports them side by side without merging or reranking. Use when the user wants to review a branch, a PR, work-in-progress changes, or asks to "review since X".
+description: Review the diff between HEAD and a fixed point (commit, branch, tag, or merge-base) along three axes — Standards (does the code follow this repo's documented coding standards?), Spec (does the code match what the originating issue or blueprint asked for?), and Behaviour (is it correct on the paths the spec doesn't list — sibling branches, concurrent repeats, partial failure, the error the user sees, who can reach each write, pages open across a deploy?). Runs each axis as a parallel sub-agent so none sees another's reasoning, then reports them side by side without merging or reranking. Use when the user wants to review a branch, a PR, work-in-progress changes, or asks to "review since X".
 subagent-role: reviewer
 argument-hint: "fixed point to diff against (commit, branch, tag, or merge-base), and optionally a spec path"
 ---
@@ -11,7 +11,7 @@ Three-axis review of the diff between `HEAD` and a fixed point the user supplies
 
 - **Standards** — does the code conform to this repo's documented coding standards?
 - **Spec** — does the code faithfully implement the originating issue or blueprint?
-- **Behaviour** — is the code correct on the paths the spec doesn't list: sibling branches, the same request twice at once, failure part-way through, and what the user sees when it fails?
+- **Behaviour** — is the code correct on the paths the spec doesn't list: sibling branches, the same request twice at once, failure part-way through, what the user sees when it fails, who can reach each write, and pages left open across a deploy?
 
 All three axes run as **parallel sub-agents** via the Agent tool so none pollutes another's context, then this skill aggregates their findings.
 
@@ -82,12 +82,18 @@ Every prompt must end with: _"Do not invoke `/review` or spawn additional agents
 **Behaviour sub-agent prompt** — include:
 
 - The diff command and commit list. No spec: this axis judges the code against what it does, not what was asked, and reads surrounding code as needed to trace each path.
-- The brief: "Check the diff for four things.
+- The brief: "Check the diff for seven things.
   (a) **Paths.** For each entry point the diff adds or changes (server function, route handler, exported function), list its outcome branches (e.g. created, linked, restored, refused). Flag any branch that skips a step its sibling branches do — saving an answer, crediting, writing the session, recording an audit.
   (b) **Repeats and partial failure.** For each sequence of writes or external calls, ask: what if the same request runs twice at once? What if it fails between steps? Flag any state left half-written, duplicated or orphaned, and any two writes in separate transactions that must succeed or fail together.
   (c) **Failure the user sees.** For each failure return or caught error, trace it to what the user is shown. Flag a message that blames the wrong thing, a failure swallowed with nothing shown, and a retry that cannot succeed.
   (d) **States the diff reads.** For each stored state or enum value the diff displays, counts or branches on, find every place that writes it, including code outside the diff and in other apps (grep the column or value). For the situation the UI or docs say the value stands for, confirm a writer actually leaves it in place, including after a rollback or a failure part-way. Flag a value that no path can produce in that situation, citing the writer's file:line.
-  Each finding cites file:line and gives a concrete scenario ('two submits from one account: …'). A Behaviour finding is never a judgement call — the scenario is real or it isn't. Never label a finding 'edge case' or 'low risk' to soften it. Under 400 words."
+  (e) **Who can reach it.** For each write the diff adds, or moves to a different auth guard or helper, read that guard's body even when the diff doesn't touch it. List which identities could reach the write before the change and which can after. Flag any identity that is new. Then ask:
+    - Can the identity change between the page loading and the write? Cookies and local storage are shared by every tab, so another tab can sign in or start a session.
+    - Does an optional auth or ownership parameter skip its check when it is left out? A check that passes when the parameter is missing fails open.
+    Flag a write that stores data against a different user than the one who loaded the page.
+  (f) **Pages open across a deploy.** For each server function, endpoint or message whose input or result shape the diff changes but whose name or id stays the same, ask: what happens to a page or client built before the deploy? Flag a client that would crash on the new result shape. Also flag an input field whose meaning changes, because an old server drops fields it does not know and still reports success.
+  (g) **Widened sets.** When the diff extends a rule from one member to a whole set (every form, every role, every tenant), check every member of the set, not just the one the tests use. Also check that a member outside the set is still refused.
+  Each finding cites file:line and gives a concrete scenario ('two submits from one account: …'). A Behaviour finding is never a judgement call — the scenario is real or it isn't. Never label a finding 'edge case' or 'low risk' to soften it. When a finding means data saved against the wrong user, or access the user should not have, prove it: write a throwaway test that fails on the current code, run it, report the result, then delete it. Do not commit it. Existing tests are not evidence that a path is safe — they may encode the same bug. Under 500 words."
 
 If the spec is missing, skip the Spec sub-agent and note this in the final report. Standards and Behaviour still run.
 
@@ -103,6 +109,6 @@ A change can pass one axis and fail another:
 
 - Code that follows every standard but implements the wrong thing → **Standards pass, Spec fail.**
 - Code that does exactly what the issue asked but breaks the project's conventions → **Spec pass, Standards fail.**
-- Code that does what the issue asked, the way the repo likes, but leaves an orphan row when two submits overlap, skips a step on one of three paths, or tells the user the wrong thing failed → **Standards and Spec pass, Behaviour fail.** Specs list the happy paths; Spec review checks against that list, so bugs on paths the spec never names fall between the other two axes.
+- Code that does what the issue asked, the way the repo likes, but leaves an orphan row when two submits overlap, skips a step on one of three paths, tells the user the wrong thing failed, or saves a stale tab's answers against the patient another tab signed in as → **Standards and Spec pass, Behaviour fail.** Specs list the happy paths; Spec review checks against that list, so bugs on paths the spec never names fall between the other two axes.
 
 Reporting them separately stops one axis from masking another.
