@@ -27,8 +27,9 @@
 // Highlight boxes are in CSS pixels of the captured page, which is what
 // getBoundingClientRect and page.rect() return. "scale" is the capture's device
 // scale factor (default 2) and maps them onto the image's real pixels.
-// "zoom" is optional: the band (CSS pixels) to enlarge for a tall shot, when the
-// padding around the boxes would cut a question in half.
+// "zoom" is optional: the area (CSS pixels; "x" and "w" default to the full
+// width) to enlarge, when the padding around the boxes would cut a question
+// in half.
 //
 // Same rule as capture-headless.mjs: no dependencies. Chrome renders the page
 // and prints it, so there is no PDF library to install.
@@ -52,15 +53,19 @@ const escape = (text = '') =>
 
 const pct = (value, of) => `${((value / of) * 100).toFixed(3)}%`;
 
-// The highlighted part of a tall phone screen is unreadable at full-page size,
-// so the text column repeats it, cropped to full width around every box. The
-// copy carries no marks, so the change can be seen exactly as it renders.
+// The highlighted part of a screen is often unreadable at full-page size, so
+// the text column repeats it, cropped around every box: full width for a tall
+// phone shot, the boxes plus padding for a wide one. The copy carries no
+// marks, so the change can be seen exactly as it renders.
 function zoomArea(highlights, scale, width, height) {
-  if (highlights.length === 0 || width >= height) return null;
+  if (highlights.length === 0) return null;
   const pad = 64 * scale;
   const top = Math.max(0, Math.min(...highlights.map((h) => h.y * scale)) - pad);
   const bottom = Math.min(height, Math.max(...highlights.map((h) => (h.y + h.h) * scale)) + pad);
-  return { x: 0, y: top, w: width, h: bottom - top };
+  if (width < height) return { x: 0, y: top, w: width, h: bottom - top };
+  const left = Math.max(0, Math.min(...highlights.map((h) => h.x * scale)) - pad);
+  const right = Math.min(width, Math.max(...highlights.map((h) => (h.x + h.w) * scale)) + pad);
+  return { x: left, y: top, w: right - left, h: bottom - top };
 }
 
 function zoomView(path, area, width) {
@@ -92,14 +97,17 @@ async function shotPage(dir, shot, index) {
   const whole = { x: 0, y: 0, w: width, h: height };
   const zoom =
     shot.zoom ?
-      { x: 0, y: shot.zoom.y * scale, w: width, h: shot.zoom.h * scale }
+      {
+        x: (shot.zoom.x ?? 0) * scale,
+        y: shot.zoom.y * scale,
+        w: shot.zoom.w ? shot.zoom.w * scale : width,
+        h: shot.zoom.h * scale,
+      }
     : zoomArea(highlights, scale, width, height);
   const legend = highlights
     .map((h, i) => `<li><span class="badge">${i + 1}</span><span>${escape(h.label)}</span></li>`)
     .join('');
-  // Tall phone shots sit beside the text so the whole screen fits on the page.
-  const layout = width >= height ? 'wide' : 'tall';
-  return `<section class="${layout}">
+  return `<section>
   <div class="text">
     <p class="step">${index + 1} of %TOTAL%</p>
     <h2>${escape(shot.title)}</h2>
@@ -125,17 +133,14 @@ export async function buildPdf(manifestPath, outPath) {
   header { break-after: page; padding-top: 25mm; }
   header h1 { font-size: 22pt; margin: 0 0 4mm; }
   header ol { padding-left: 5mm; }
-  section { break-after: page; height: 185mm; display: flex; gap: 10mm; }
+  section { break-after: page; height: 185mm; display: flex; gap: 10mm; overflow: hidden; }
   section:last-child { break-after: auto; }
-  section.wide { flex-direction: column; gap: 4mm; }
-  section.tall .text { flex: 0 0 90mm; }
+  section .text { flex: 0 0 90mm; }
   .step { font-size: 9pt; color: #71717a; margin: 0; }
   h2 { font-size: 15pt; margin: 1mm 0 3mm; }
-  figure { margin: 0; flex: 1; min-height: 0; display: flex; justify-content: center; }
-  .frame { position: relative; height: 100%; }
-  .frame img { display: block; height: 100%; width: auto; border: 1px solid #d4d4d8; border-radius: 6px; }
-  section.wide .frame { height: auto; max-width: 100%; }
-  section.wide .frame img { height: auto; width: 100%; max-height: 150mm; }
+  figure { margin: 0; flex: 1; min-width: 0; display: flex; justify-content: center; align-items: flex-start; }
+  .frame { position: relative; display: inline-block; max-width: 100%; }
+  .frame img { display: block; max-width: 100%; max-height: 183mm; width: auto; height: auto; border: 1px solid #d4d4d8; border-radius: 6px; }
   .box { position: absolute; outline: 2px solid #e11d48; outline-offset: 3px; border-radius: 6px; }
   .box .badge { position: absolute; top: -3px; left: -30px; }
   .zoom { position: relative; margin: 5mm 0 0; }
