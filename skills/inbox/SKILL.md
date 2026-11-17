@@ -35,9 +35,11 @@ With an argument, show only that part: `prs` (to review + mine), `sessions`, or 
 1. Sessions with `state: "waiting"`: `project (worktree) · branch — message`, with `(worktree)` only when `worktree` is set.
 2. `toReview` with `action: "re-review"`: new commits since the user last reviewed.
 3. `toReview` with `action: "review"`.
-4. `mine` with `status.kind: "changes-requested"`, naming `status.by`.
+4. `mine` that needs fixing: `status.kind: "changes-requested"` (naming `status.by`), `build.state: "failed"` (naming `build.failed`), or `conflicts > 0`. One line per PR listing every problem.
 
-**Ready**: `mine` with `status.kind: "approved"`. Suggest merging.
+Mark any `toReview` PR whose `build.state` is `"failed"` with "build failing". It may not be worth reviewing yet.
+
+**Ready**: `mine` with `status.kind: "approved"`, no failed build and no conflicts. Suggest merging.
 
 **Also** (one line): count of sessions with `state: "done"`, count of `mine` still waiting on reviewers, and Jira issues counted by status. List Jira issues individually only when the filter is `jira`.
 
@@ -51,6 +53,7 @@ Needs you now
   🔁 #610 Backfill actions (Henry Xu) — new commits since your review
   👀 #692 Pathway import (Jack Xing)
   ✏️ #680 your PR — changes requested by Jack Xing
+  ❌ #683 your PR — Pipeline failed · ⚠️ 2 conflicts
 
 Ready
   ✅ #681 approved by Jack Xing — merge?
