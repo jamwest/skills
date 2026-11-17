@@ -16,6 +16,7 @@
 //         "title": "Details form, gender answered",
 //         "caption": "What this shot proves.",
 //         "scale": 2,
+//         "zoom": { "y": 640, "h": 280 },
 //         "highlights": [
 //           { "x": 20, "y": 860, "w": 460, "h": 270, "label": "New: gender question" }
 //         ]
@@ -26,6 +27,8 @@
 // Highlight boxes are in CSS pixels of the captured page, which is what
 // getBoundingClientRect and page.rect() return. "scale" is the capture's device
 // scale factor (default 2) and maps them onto the image's real pixels.
+// "zoom" is optional: the band (CSS pixels) to enlarge for a tall shot, when the
+// padding around the boxes would cut a question in half.
 //
 // Same rule as capture-headless.mjs: no dependencies. Chrome renders the page
 // and prints it, so there is no PDF library to install.
@@ -50,22 +53,23 @@ const escape = (text = '') =>
 const pct = (value, of) => `${((value / of) * 100).toFixed(3)}%`;
 
 // The highlighted part of a tall phone screen is unreadable at full-page size,
-// so the text column repeats it, cropped to full width around every box.
+// so the text column repeats it, cropped to full width around every box. The
+// copy carries no marks, so the change can be seen exactly as it renders.
 function zoomArea(highlights, scale, width, height) {
   if (highlights.length === 0 || width >= height) return null;
-  const pad = 24 * scale;
+  const pad = 64 * scale;
   const top = Math.max(0, Math.min(...highlights.map((h) => h.y * scale)) - pad);
   const bottom = Math.min(height, Math.max(...highlights.map((h) => (h.y + h.h) * scale)) + pad);
   return { x: 0, y: top, w: width, h: bottom - top };
 }
 
-function zoomView(path, area, width, boxes) {
+function zoomView(path, area, width) {
   const img = [
     `width:${pct(width, area.w)}`,
     `left:${pct(-area.x, area.w)}`,
     `top:${pct(-area.y, area.h)}`,
   ].join(';');
-  return `<div class="zoom"><div class="clip" style="aspect-ratio:${area.w}/${area.h}"><img src="${pathToFileURL(path)}" style="${img}"></div><div class="overlay">${boxes}</div></div>`;
+  return `<div class="zoom"><div class="clip" style="aspect-ratio:${area.w}/${area.h}"><img src="${pathToFileURL(path)}" style="${img}"></div></div>`;
 }
 
 async function shotPage(dir, shot, index) {
@@ -86,7 +90,10 @@ async function shotPage(dir, shot, index) {
       })
       .join('');
   const whole = { x: 0, y: 0, w: width, h: height };
-  const zoom = zoomArea(highlights, scale, width, height);
+  const zoom =
+    shot.zoom ?
+      { x: 0, y: shot.zoom.y * scale, w: width, h: shot.zoom.h * scale }
+    : zoomArea(highlights, scale, width, height);
   const legend = highlights
     .map((h, i) => `<li><span class="badge">${i + 1}</span><span>${escape(h.label)}</span></li>`)
     .join('');
@@ -98,7 +105,7 @@ async function shotPage(dir, shot, index) {
     <h2>${escape(shot.title)}</h2>
     <p>${escape(shot.caption)}</p>
     ${legend ? `<ol class="legend">${legend}</ol>` : ''}
-    ${zoom ? zoomView(path, zoom, width, boxesIn(zoom)) : ''}
+    ${zoom ? zoomView(path, zoom, width) : ''}
   </div>
   <figure><div class="frame"><img src="${pathToFileURL(path)}">${boxesIn(whole)}</div></figure>
 </section>`;
@@ -129,12 +136,11 @@ export async function buildPdf(manifestPath, outPath) {
   .frame img { display: block; height: 100%; width: auto; border: 1px solid #d4d4d8; border-radius: 6px; }
   section.wide .frame { height: auto; max-width: 100%; }
   section.wide .frame img { height: auto; width: 100%; max-height: 150mm; }
-  .box { position: absolute; border: 2.5px solid #e11d48; border-radius: 6px; background: rgba(225, 29, 72, 0.06); }
-  .box .badge { position: absolute; top: -2px; left: -26px; }
-  .zoom { position: relative; margin: 5mm 0 0 30px; }
+  .box { position: absolute; outline: 2px solid #e11d48; outline-offset: 3px; border-radius: 6px; }
+  .box .badge { position: absolute; top: -3px; left: -30px; }
+  .zoom { position: relative; margin: 5mm 0 0; }
   .zoom .clip { position: relative; overflow: hidden; border: 1px solid #d4d4d8; border-radius: 6px; }
   .zoom .clip img { position: absolute; max-width: none; }
-  .zoom .overlay { position: absolute; inset: 0; }
   .badge { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px;
     border-radius: 50%; background: #e11d48; color: white; font-size: 10pt; font-weight: 600; }
   .legend { list-style: none; padding: 0; margin: 4mm 0 0; }

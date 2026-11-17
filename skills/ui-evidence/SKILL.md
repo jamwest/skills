@@ -280,10 +280,16 @@ node <skill-dir>/build-pdf.mjs <output-dir>/evidence.json
 
 `scale` is the capture's device scale factor (2 for the headless default, usually 2 on a
 Retina Chrome). The PDF has a cover page listing the shots, then one landscape page per
-shot: title, caption, a numbered legend, the full screen with red numbered boxes, and,
+shot: title, caption, a numbered legend, the full screen with red numbered outlines, and,
 for tall phone shots, a zoomed copy of the boxed area so it can be read. Label each box
 with what is new or different ("New: …", "Now required", "Moved above ethnicity"), not
 what it is.
+
+**Never cover the change.** Outlines have no fill and sit a few pixels outside the box,
+and the zoomed copy carries no marks at all, so a reviewer can always see the change
+exactly as it renders. Box the changed element itself, not a whole section around it.
+The zoom pads the boxes; when that would cut a question or card in half, set the shot's
+`"zoom": { "y": …, "h": … }` (CSS pixels) to the band that shows it whole.
 
 **Check the PDF.** Render its pages and look at each one: boxes on the right element,
 no badge covering a label, nothing important cut off by the zoom. Retake or re-measure
