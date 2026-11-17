@@ -87,8 +87,9 @@ option.
   after they say yes *for this run* — a prior yes doesn't carry forward.
 - If they decline or don't say, leave the draft as text. They paste it into the PR
   description themselves.
-- Either way, the evidence PDF has to be dropped into the PR in the web editor by hand —
-  the CLI can't attach it. Give the user its path and say where it goes.
+- Either way, the evidence PDF has to be attached to the PR in the web UI by hand — the
+  CLI can't attach it, and Bitbucket shows only images inline. Give the user its full
+  `~/…` path and remind them to attach it.
 
 ## Finally
 

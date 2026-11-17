@@ -305,11 +305,13 @@ for i in 0..<doc.pageCount {
 }
 ```
 
-**Send** the PDF's path, plus this block for the PR description:
+**Send** the PDF's full path from the home folder (`~/…`), plus this block for the PR
+description. Bitbucket shows only images inline; a PDF is an attachment on the PR, so
+the block says it is attached rather than leaving a spot to drop it:
 
 ```markdown
-**UI evidence**
-<!-- drop evidence.pdf here -->
+UI evidence is attached (`evidence.pdf`):
+
 1. Create page, blank form: no Copy button while every field is empty.
 2. Create page, filled form: Copy button appears once a field has content.
 ```
