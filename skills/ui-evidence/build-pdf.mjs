@@ -74,7 +74,8 @@ function zoomView(path, area, width) {
     `left:${pct(-area.x, area.w)}`,
     `top:${pct(-area.y, area.h)}`,
   ].join(';');
-  return `<div class="zoom"><div class="clip" style="aspect-ratio:${area.w}/${area.h}"><img src="${pathToFileURL(path)}" style="${img}"></div></div>`;
+  const fit = `width:min(100%, calc(95mm * ${(area.w / area.h).toFixed(4)}))`;
+  return `<div class="zoom" style="${fit}"><div class="clip" style="aspect-ratio:${area.w}/${area.h}"><img src="${pathToFileURL(path)}" style="${img}"></div></div>`;
 }
 
 async function shotPage(dir, shot, index) {
