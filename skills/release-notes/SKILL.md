@@ -38,6 +38,46 @@ This skill produces a short, copy-pasteable Slack message summarizing a release.
 
 7. Never invent a deploy timing/availability line. If the user hasn't told you where/when this ships, omit that line rather than guessing or copying a prior release's wording.
 
+8. Show the draft in the text format below and stop. Wait for the user to approve or change it.
+
+9. Once the draft is approved, offer to post it to Slack as Block Kit (see **Posting to Slack**). Never post without the user saying so. If Slack isn't set up, the approved text is the final output.
+
+## Posting to Slack
+
+Two scripts sit next to this file. `build-blocks.mjs` turns a notes file into the card layout, so every release looks the same. `post-slack.mjs` posts it. The bot token is in the macOS Keychain, and the channels are in `~/.config/release-notes/slack.json`:
+
+```json
+{ "keychainService": "slack-release-notes-bot", "channels": { "test": "C…", "release": "C…" } }
+```
+
+If that file or the token is missing, tell the user what's missing and give the approved text instead.
+
+1. Write the approved draft as a notes file in a gitignored scratch folder (in a repo, `.claude/release-notes/<YYYY-MM-DD>-notes.json`):
+
+   ```json
+   {
+     "date": "November 20, 2026",
+     "status": "Deploying :hourglass_flowing_sand:",
+     "summary": "one line for notifications and search",
+     "prUrl": "https://… (optional, adds a View release PR button)",
+     "live": [{ "title": "Patient app", "bullets": ["…"] }],
+     "inProgress": [
+       { "title": "Health plan", "flags": ["health-plan"], "bullets": ["…"] },
+       { "title": "New AI Health Coach", "flags": ["web.coach-v2"], "needs": ["health-plan"], "bullets": ["…"] },
+       { "title": "HEMC questionnaires", "note": "not set up in production yet", "bullets": ["…"] }
+     ],
+     "behindTheScenes": ["…"]
+   }
+   ```
+
+   `status` defaults to Deploying. Use the user's wording when they give one.
+
+2. Build: `node <skill-dir>/build-blocks.mjs <notes.json> <message.json>`.
+
+3. Preview: `node <skill-dir>/post-slack.mjs --target test --file <message.json>`. Report the `ts` and ask the user to check the post in Slack. For changes, edit the notes file, rebuild, and update the preview in place with `--update <ts>`.
+
+4. Post only after the user approves the preview: `--target release`. Report the `ts`. Later edits (e.g. status to `Live :white_check_mark:`) go through `--update <ts>` on the same message, never a new post.
+
 ## Output format
 
 Plain text, ready to paste directly into Slack (`mrkdwn` formatting — single asterisks for bold, `•` for bullets, category names as bold headers with no `#`).
