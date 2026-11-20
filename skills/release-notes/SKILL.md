@@ -1,6 +1,6 @@
 ---
 name: release-notes
-description: Generate high-level, Slack-postable release notes summarizing the changes between two branches (typically development -> main) for a non-technical audience (CEO, demoers). Use when the user asks for release notes, a "what's new" summary, or wants to announce a deploy in Slack.
+description: Generate high-level, Slack-postable release notes summarizing the changes between two branches (typically development -> main) for a non-technical audience (CEO, demoers). Splits what is live for everyone from work still behind a feature flag or not yet set up, so unreleased features still show progress. Use when the user asks for release notes, a "what's new" summary, or wants to announce a deploy in Slack.
 subagent-role: scout
 argument-hint: "optional branch range and/or release status override (e.g. 'staging..main', 'status: Live')"
 ---
@@ -11,22 +11,32 @@ This skill produces a short, copy-pasteable Slack message summarizing a release.
 
 ## Process
 
-1. Determine the commit range. Default to `origin/main..origin/development` after `git fetch origin main development --quiet`. If the user names different branches/refs, use those instead.
+1. Determine the commit range. Default to `origin/main..origin/development` after `git fetch origin main development --quiet`. If the user names a merged release PR, use that merge commit's range (`<merge>^1..<merge>^2`). If the user names different branches/refs, use those instead.
 
 2. Pull the full commit list to understand what shipped:
    - `git log <range> --oneline --no-merges` for the raw commits
-   - `git log <range> --oneline` (merges included) to recover PR titles, which often group related work better than individual commits
+   - `git log <range> --oneline --first-parent` to recover PR titles, which often group related work better than individual commits
 
 3. Filter ruthlessly. Drop anything that isn't user-visible: test-only commits, eval/harness commits, CI/pipeline commits, dependency bumps, typo fixes in non-user-facing data, refactors. If there's anything worth keeping from that pile, fold it into one or two bullets under a single "Behind the scenes" section — never one bullet per internal commit.
 
-4. Group the remaining commits by user-facing feature area, not by ticket, folder, or repo package. Categories are dynamic per release — infer them from what actually changed. Past categories used: AI Health Coach, Check-ins & Notifications, Data Security, Portal, Sign-in, Mobile, Branding, Behind the scenes. Don't force a fixed list — add or drop categories to fit the batch, and skip any category with nothing in it.
+4. Work out whether each remaining change is live for everyone or held back.
+   - **Behind a flag:** find the repo's feature flag registry (grep for the flag slugs, e.g. a `FLAGS` constant) and check, from the PR's diff, which flag gates the change. A change can sit behind a flag without naming it: a fix inside a flagged feature (e.g. a v2-only module) is gated by that feature's flag. Note flag dependencies (one flag only works when another is on).
+   - **Not set up yet:** some work has no flag but is still not live, for example a questionnaire or tenant not yet configured in production. You can't see this from the code. Ask the user, or take it from what they told you.
+   - **Live for everyone:** everything else.
+   Don't guess which flags are on in which environment. If the user gives you that, add it next to the flag header; otherwise leave it off.
 
-5. Write each bullet at CEO/demoer altitude:
+5. Group the bullets:
+   - Under **Live for everyone**, group by user-facing area (Patient app, Portal, AI Health Coach, Sign-in, Mobile, Branding, ...). Categories are dynamic per release — skip any with nothing in it.
+   - Under **In progress, behind feature flags**, make one group per feature, named in plain words, followed by its flag slug(s) in backticks. A held-back item with no flag gets its own group with an italic note instead of a slug (e.g. `_not set up in production yet_`).
+   - **Behind the scenes** goes last.
+   Leave out a top-level section that would be empty. If nothing is flagged, drop the two top-level headers and just list the categories.
+
+6. Write each bullet at CEO/demoer altitude:
    - Describe the outcome or user impact, not the mechanism
-   - No ticket numbers (GROOV-xxxx), PR numbers, file paths, or internal system/vendor names (e.g. say "sign-in" not "WorkOS callback"; say "faster page loads" not "turbo cache fix")
+   - No ticket numbers (GROOV-xxxx), PR numbers, file paths, or internal system/vendor names (e.g. say "sign-in" not "WorkOS callback"; say "faster page loads" not "turbo cache fix"). Flag slugs are the one exception, and only in the flag group headers, so demoers can ask for a flag to be turned on.
    - One line per change; combine tightly related fixes into a single bullet rather than listing each separately
 
-6. Never invent a deploy timing/availability line. If the user hasn't told you where/when this ships, omit that line rather than guessing or copying a prior release's wording.
+7. Never invent a deploy timing/availability line. If the user hasn't told you where/when this ships, omit that line rather than guessing or copying a prior release's wording.
 
 ## Output format
 
@@ -36,40 +46,59 @@ Plain text, ready to paste directly into Slack (`mrkdwn` formatting — single a
 :rocket: *Release Notes — <Month D, YYYY>*
 _*Status:* Deploying_ :hourglass_flowing_sand:
 
-*<Category>*
-• <bullet>
-• <bullet>
+*Live for everyone*
 
 *<Category>*
+• <bullet>
+
+*In progress, behind feature flags*
+_Progress on features that are not switched on for everyone yet_
+
+*<Feature>*  `<flag-slug>`
+• <bullet>
+
+*<Feature>*  _not set up in production yet_
+• <bullet>
+
+*Behind the scenes*
 • <bullet>
 ```
 
-- Keep the rocket + title as line 1, the status line directly under it as line 2, then a blank line before the first category.
+- Keep the rocket + title as line 1, the status line directly under it as line 2, then a blank line before the first section.
 - If the user gives a different status (e.g. "Live", "Deploying to Demo only"), use their wording instead of "Deploying" — but keep the `_*Status:* ..._` styling and trailing emoji.
 - Only add a closing availability line ("This will be available in ... by end of day") if the user has told you the actual timing/environment for this release.
 
 ## Example output
 
 ```
-:rocket: *Release Notes — July 23, 2026*
+:rocket: *Release Notes — November 20, 2026*
 _*Status:* Deploying_ :hourglass_flowing_sand:
 
-*Branding*
-• Portal, landing page, and app header rebranded to Groov Health with new logo/lockup
+*Live for everyone*
 
-*AI Health Coach*
-• Fixed a bug where the coach could announce an action and then go silent instead of following through
-• Refreshed the welcome and footer copy, tightened up the chat input layout
+*Patient app*
+• Buttons, inputs and chat controls are bigger and easier to tap on phones
 
-*Portal & Mobile*
-• Fixed keyboard and scrolling issues on iOS (chat, PROMs, sign-in)
-• Hid the WorkOS security widget from the preferences page for a cleaner settings screen
+*Portal*
+• The Search and Reset buttons on the Patients page line up with the inputs
 
-*Sign-in*
-• Callback failures now show a friendly error page instead of a raw error
-• Fixed a stale-session edge case when linking a guest account to WorkOS
+*In progress, behind feature flags*
+_Progress on features that are not switched on for everyone yet_
+
+*HEMC questionnaires*  _not set up in production yet_
+• The new patient questionnaire asks sex assigned at birth on one clear screen, with an "Another term" option
+
+*Health plan*  `health-plan`
+• The patient Overview shows the health plan instead of the old action plan card
+
+*New AI Health Coach*  `web.coach-v2` (needs `health-plan` too)
+• The coach never remembers sensitive things such as abuse, self-harm, or sexual health
+• After the patient adds an action, the coach confirms it is in their health plan and moves on to the next step
+
+*Gender*  `web.gender-capture`, `portal.patient-gender`
+• Onboarding asks the patient's gender
+• The portal Patient details card shows gender
 
 *Behind the scenes*
-• Fixed a consent seed data typo
-• Faster CI builds
+• Visit records are tidied up and checked for missing details
 ```
