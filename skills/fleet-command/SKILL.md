@@ -1,6 +1,6 @@
 ---
 name: fleet-command
-description: Take a parent ticket whose subtasks already exist (from /break-it-down), work out which subtasks are independent and can run in parallel versus which have to wait on another finishing first, then dispatch one /implement subagent per subtask into its own git worktree, each branched from the work it depends on (stacked on its blockers, or off a shared integration branch). Commits each subtask's finished work and tears down its worktree, runs a consolidation pass (/review then /deepen) over the whole fleet's output, then offers, but never assumes, to push the branches and open PRs (via /pr-description) into the integration branch. Use when the user wants to execute a multi-subtask ticket across several agents at once, says "run the fleet on X", "work these subtasks in parallel", or has just run /break-it-down and is ready to start execution.
+description: Take a parent ticket whose subtasks already exist (from /break-it-down), work out which subtasks are independent and can run in parallel versus which have to wait on another finishing first, then dispatch one /implement subagent per subtask into its own git worktree, each branched from the work it depends on (stacked on its blockers, or off a shared integration branch). Commits each subtask's finished work and tears down its worktree, runs a consolidation pass (/review, /deepen to rank duplication, then the refactors) over the whole fleet's output, then offers, but never assumes, to push the branches and open PRs (via /pr-description) into the integration branch. Use when the user wants to execute a multi-subtask ticket across several agents at once, says "run the fleet on X", "work these subtasks in parallel", or has just run /break-it-down and is ready to start execution.
 subagent-role: orchestrator
 compatibility: claude-code
 argument-hint: "parent ticket key or path (e.g. PROJ-123, GH-42, .claude/scratch/<slug>/) with subtasks already created by /break-it-down"
@@ -252,13 +252,19 @@ Once every subtask has finished:
 2. Run `/review` against the integration branch as the fixed point, and collect the seam
    candidates and duplications the `/implement` reports named. Its Behaviour axis now sees the
    whole fleet's output at once, so it can catch paths that only diverge across subtasks. Spec
-   "wrong" and Behaviour findings are not `/deepen` work: add each to **Known defects**, quoted
-   word for word.
-3. Run `/deepen` on them in that worktree: fold duplicates into one shared version, build the
-   confined seams. No new behaviour; the full suite, end-to-end and visual specs stay green.
-4. Commit, and list it in the final report as one more branch.
+   "wrong" and Behaviour findings are not refactor work: fix each one inside a subtask's goal
+   (per `/implement`'s rule), and add the rest to **Known defects**, quoted word for word.
+3. Run `/deepen` scoped to the fleet's diff, to rank the duplications and seam candidates.
+   `/deepen` only finds and ranks; it changes no code. Its hand-off to `/grill` or `/wayfinder`
+   is for larger redesigns, not for this pass.
+4. Make the refactors yourself (or in one worker agent) for every candidate confined to the
+   fleet's own code: fold duplicates into one shared version, build the seams. No new behaviour;
+   the full suite, end-to-end and visual specs stay green. Leave anything that reaches outside
+   the fleet's code for the final report.
+5. Commit each refactor on its own, scoped so it can later be folded into the subtask branch
+   that caused it, and say which subtask each one belongs to. List the branch in the final report.
 
-Skip steps 3–4 only if the review finds no cross-subtask duplication and no reported seam is
+Skip steps 3–5 only if the review finds no cross-subtask duplication and no reported seam is
 confined. Say so in the report. Step 2's review always runs.
 
 ### 8. Final report
