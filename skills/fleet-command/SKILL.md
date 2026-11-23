@@ -57,6 +57,8 @@ and so on. Infer ordering only from real signals:
 - **A structural change to files others edit.** A subtask that moves, splits or renames a file
   blocks every subtask that edits that file, even when neither mentions the other. Run in
   parallel, the others edit the old file and every one of them conflicts with the move.
+- **Two subtasks that each add a migration.** Run them one after another. In parallel, both take
+  the same migration number and snapshot parent, and the merge has to regenerate one of them.
 
 Subtasks with no such signal between them are independent — default to parallel, don't invent an
 ordering that isn't there. Start from the dependencies `break-it-down` recorded (`Blocked by`
@@ -84,8 +86,20 @@ Layer 2 — waits on Layer 1:
 Each dependent subtask shows its base (step 6): its blocker's branch, or the blockers it will
 merge.
 
-Ask: _"Does this look right? Say if something should move layers, run independently, or if the cap
-should change."_ Wait for explicit confirmation before creating any branch, worktree, or agent.
+Also settle, in the same plan, **where the PRs merge and in what shape**. Changing this after the
+branches exist costs a tidy and a rebase of every branch:
+
+- **Merge target**: straight into `CONTRIBUTING.md`'s base branch, or into the integration branch
+  first. Recommend straight into the base branch when each subtask is safe to ship alone (behind a
+  flag, expand-only migrations); then the "integration branch" is only the fleet's starting point
+  and gets no PR.
+- **PR shape**: a linear stack (each PR on the one before it) or independent PRs. A linear stack
+  needs a linear order now, so plan Layer 2 subtasks that will stack as a chain, not as siblings
+  merged together later.
+
+Ask: _"Does this look right? Say if something should move layers, run independently, if the cap
+should change, or if the PRs should merge somewhere else."_ Wait for explicit confirmation before
+creating any branch, worktree, or agent.
 
 ### 5. Create the integration branch
 
@@ -122,6 +136,12 @@ For each subtask in the current layer, up to the concurrency cap at a time:
    start a dev server, take screenshots or run integration tests, and reports "not checked"
    when it could have checked. Do the same for every worktree this skill makes, including
    the consolidate one.
+
+   Then install dependencies in the worktree with the repo's package manager (`npm install`,
+   `pnpm install`, `uv sync`…), and restore the lockfile if the install rewrote it. Without
+   this, a monorepo's workspace imports resolve up to the main working copy's dependency
+   folder and from there to the main copy's packages, so typecheck and tests pass against the
+   base branch's code, not the subtask's. Every check the agent reports is then worthless.
 2. Spawn one Agent-tool subagent (background), briefed explicitly since none of this is otherwise
    discoverable to it:
    - The absolute worktree path to work in (it must `cd` there — this is a separate working tree,
@@ -144,7 +164,15 @@ For each subtask in the current layer, up to the concurrency cap at a time:
      change files with the Edit and Write tools, never with shell heredocs, `sed -i` or
      `cat >>`, because the tools fail loudly and a refused shell edit can be lost without a
      sign. Run one git command per call, without `&&` chains or `git -C`. For anything else
-     the guard refuses, write the script to `/tmp` and run it as one command
+     the guard refuses, write the script to `/tmp` and run it as one command. `cd` does not
+     carry between shell calls, so give the agent a ready-made wrapper: copy
+     [wt-git.sh](./wt-git.sh) to `/tmp` and tell it to run every git command as
+     `sh /tmp/wt-git.sh <worktree> <git args>`. Agents that improvise one have run a
+     cherry-pick in the parent checkout by mistake
+   - **Evidence is part of the subtask.** If the change is visible in a browser, `/implement`
+     runs `/ui-evidence` before committing. Never switch that step off in a brief. If the agent
+     cannot reach a screen (a login, a missing service), it stops and reports the blocker; it
+     never writes "not checked" and carries on
    - **Briefs give context, never scope.** Scope comes only from the issue. Don't add constraints
      ("don't touch X") that the issue doesn't state; if the issue and a background doc disagree,
      the issue wins
@@ -174,6 +202,19 @@ subtask's branch. Pass the decisions as the overrides list for `/implement` step
 free-form "make these changes" prompt: it skips step 8, so the reworked code ships with less review
 than the first version. A fork can't spawn the review subagents. If you use one, run `/review` and
 `/brittle-tests` yourself on its output before you report it done.
+
+**Restacking.** When a fix lands on a lower branch of a stack, rebase every branch above it with
+[restack.sh](./restack.sh): `sh restack.sh <worktree> <lower-branch> <old-lower-tip> <branch>…`,
+where `<old-lower-tip>` is the commit the lower branch pointed at before the fix and the branches
+above it are listed lowest first. It runs `git rebase --onto` up the chain and stops at the first
+conflict, with the rebase left in progress for you to resolve and continue.
+Don't spawn an agent for a restack that applies cleanly. Then check at this depth, not more:
+
+- Lint, typecheck and unit tests on **every** restacked branch. These are cheap and catch a
+  commit that needs code from a later branch.
+- The slow suites (database integration, end-to-end) only on the **branch that changed** and the
+  **top of the stack**, which holds everything. Running them on each branch in between repeats
+  the same tests on a subset of the code.
 
 **When the user decides a Known defect**, check their reason against how the defect works before
 recording it as decided. If the reason contradicts the scenario (e.g. "the unique ID means this
@@ -256,12 +297,14 @@ it's the user's call.
 ### 9. Offer to publish
 
 Ask once, for the whole successful batch: _"Push these N branches and open PRs into
-feat/proj-123-payment-retry?"_ Never assume — wait for explicit yes.
+<the merge target and shape agreed in step 4>?"_ Never assume — wait for explicit yes.
 
-If yes, per branch:
+If yes, first rebase the stack onto the latest base branch (a base that moved during the run often
+brings a migration number clash) and re-run the checks per *Restacking*. Then, per branch:
 
 1. `git push -u origin <branch>`
-2. Invoke `/pr-description`, passing the integration branch as its base-branch override, so the
-   PR targets the integration branch rather than `CONTRIBUTING.md`'s repo-wide default.
+2. Invoke `/pr-description` with the PR's destination as its base-branch override: the base
+   branch, or the branch below it in a stack. Let it run `/ui-evidence` as it normally would;
+   never tell it to skip evidence.
 
 Exclude held or failed subtasks from the offer; name them separately as still needing a decision.
