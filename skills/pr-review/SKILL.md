@@ -34,6 +34,14 @@ Run all of these, even when the user gave concerns:
 - **Shared-package reuse.** For each new component, helper or style block, look in the repo's shared packages (the ones AGENTS.md lists) for an existing equivalent. If you find one, read its props or API before claiming it fits. Some shared components look similar but are tied to context the PR doesn't have, such as a form library. A raw element that copies the existing pattern next to it is consistent. Flag the shared pattern as a candidate to move into the package, not as a defect in this PR.
 - **Naming.** Compare new names with `CONTEXT.md`: the terms it defines and its _Avoid_ lists, including entries the PR itself adds. Grep for names that already exist elsewhere in the repo (types, components, folders) that a new name would shadow or make ambiguous.
 - **Deferred duplication.** For each refactor the PR description puts off, check whether the two copies are already in the diff. If they are, ask for the extraction now, as its own commit before the feature commit.
+- **Look-back: would a refactor first have made this change easier?** For each existing module the PR bends to serve a new caller, ask whether a seam built first would have made the feature change smaller and cleaner. Signs:
+  - a new `mode`/`variant`/boolean prop, or `if (mode === …)` branches, that switch off behaviour the new caller doesn't want
+  - props or callbacks made optional (`onSaved?`) so a second caller can skip them
+  - a child's state copied up to the parent through an effect (`onStateChange`), or a parent reaching in through `useImperativeHandle`
+  - the component still building things the new caller never uses (a mutation, dialogs, a save bar)
+  - new copies of a rule that already lives in another module
+
+  When you find one, name the seam: what splits from what, and what each caller then composes. Ask for it as its own `refactor` commit before the feature commit, and mark it **blocking**. The point is to teach how to build for the next caller, not just to approve this one. Leave it non-blocking only when the module has exactly one caller and no second one is planned.
 - **Smell baseline.** Apply the smells in step 3 of [/review](../review/SKILL.md), with its rules: the repo's own standards override, and each smell is a judgement call.
 - **Repo standards.** Apply `CONTRIBUTING.md`'s coding standards and the memory or steering rules that cover this area (coverage allowlists, comment policy, package boundaries).
 - **Existing comments.** Don't repeat a point a bot or reviewer already made. If you have something to add, reply in their thread. If a commit seems to fix an existing comment, say whether you checked it.
@@ -45,7 +53,7 @@ Reply in this shape:
 - A short opening line on whether the user's concerns hold, then one paragraph on what the PR does and what it doesn't wire up yet.
 - One subsection per concern: the verdict, then the evidence. Use a table when you compare "PR does" with "should use".
 - **Make it work:** ✅, ⚠️ or ❌. Is the logic correct and tested? Is it reachable yet? Which external sign-offs are still open?
-- **Make it right:** ✅ or ❌. A numbered list of design problems, worst first.
+- **Make it right:** ✅ or ❌. A numbered list of design problems, worst first. Lead with any look-back finding.
 - **Make it fast:** n/a unless there is a stated performance requirement or an obvious hotspot. One line either way.
 - **Verdict:** approve, approve with comments, or request changes, and the points it depends on.
 
