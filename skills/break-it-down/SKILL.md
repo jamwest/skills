@@ -98,10 +98,19 @@ inferring:
 - **One subtask moves, splits or renames a file that others edit.** It blocks every one of them,
   even when neither mentions the other: run in parallel, they edit the old file and each one
   conflicts with the move.
+- **Two subtasks that each add a migration.** Record one as blocked by the other. In parallel they
+  take the same migration number.
 
 Read the **Open Questions** section. For each unresolved question that blocks a subtask, mark that
 subtask 🚫 **Blocked** with the dependency named. Do not include blocked subtasks in the proposed
 creation list — hold them for the dry-run report.
+
+**Don't let a blocked subtask hold what makes the feature reachable.** If the blocked subtask
+also carries the piece every other subtask needs to be used for real (the first real config
+entry, a default record, the route that opens the new screen), split that piece out into its own
+unblocked subtask as a placeholder the blocked one later replaces. Otherwise the other subtasks
+can only be tested through test seams, their screens can only be shown with hand-seeded data,
+and gaps stay hidden until the blocker clears.
 
 ### 4. Show dry-run summary
 
