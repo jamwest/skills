@@ -16,8 +16,9 @@ The change stays as small as the task. Each phase has a scope rule, and step 7 c
 diff against it — improvements outside that scope get reported, not made.
 
 The output is working, tested code plus one bounded review-and-fix round (step 8) — not a loop
-until clean. Issue management (closing the issue, opening a PR, updating status) is out of scope
-and stays manual — see the end of step 8.
+until clean — and, for anything visible in a browser, the evidence PDF (step 9). Issue management
+(closing the issue, opening a PR, updating status) is out of scope and stays manual — see the end
+of the report.
 
 ## Process
 
@@ -257,9 +258,16 @@ From the reports that come back:
   cheap and inside step 5's scope, or leave it. Either way, record it in the report as a decision
   (see Report below), not as an open question.
 
-**A finding a reviewer reports as wrong is a defect, not a decision.** A Spec "wrong" or any
-Behaviour finding may stay unfixed only when fixing it needs a change outside step 5's scope, or
-needs a product decision. Then it goes in the report's **Known defects** section: the reviewer's
+**A finding a reviewer reports as wrong is a defect, not a decision.** Before you treat one as a
+defect, check it against what is already settled: the issue, its parent ticket, the blueprint and
+the overrides. Behaviour the spec asks for on purpose is not a defect; record it as a decision
+citing the line that settles it, and don't send it to the user to decide again.
+
+A real defect inside the task's goal gets fixed, even when the fix needs a file the diff didn't
+touch yet: a server check the spec implies, the same rule applied on a sibling path. Step 5's
+scope limits tidying, not fixing what the task exists to deliver. A Spec "wrong" or a Behaviour
+finding may stay unfixed only when the fix belongs to a different task, or needs a product
+decision the spec doesn't answer. Then it goes in the report's **Known defects** section: the reviewer's
 text quoted word for word, the concrete scenario, and why it wasn't fixed. Never reword it as a
 decision, an "edge case" or "low risk", and never leave it out — whoever reads the report decides
 whether the scenario matters, not you.
@@ -291,10 +299,26 @@ report, with the fixed point, so whoever reads it runs `/review` and `/brittle-t
 PR. This applies to rework too: any later change to this task's code (a rework after a user
 decision, a fix-up, a refactor pass) ends with step 8 against the commit the change started from.
 
+### 9. Evidence
+
+If any part of the change is visible in a browser, run `/ui-evidence` now, on the reviewed code.
+It finds the repo's own way to sign in, captures each state, and builds the PDF the PR will carry.
+Bugs it shows are fixed here, with a test, and step 8's suite re-run, while the task is still
+open. Found after the PR is up, the same bug costs a rework round, a restack and a new PDF.
+
+A brief from a caller never switches this step off. If you can't reach a screen (a login with no
+test account, a service that isn't running), stop on that screen and put **Evidence blocked** as
+the first line of the report, with what is missing. Finish everything else. Never write "not
+checked" and carry on: the caller can usually unblock it in a minute, and can't once the PR is
+open.
+
+Skip this step only when nothing renders differently. Say so in the report.
+
 Report:
 
 - **Ticket out of date**: each override from step 2, or "none"
 - What got fixed, and anything either review still flags (with its citations)
+- **Evidence**: the PDF path from step 9, or why there is no UI to show
 - **Known defects**: every Spec "wrong" or Behaviour finding left unfixed, quoted word for word,
   with the scenario and why it wasn't fixed (see above). Write "none" if there are none
 - Decisions, in the Chose / Why / Impact form above
