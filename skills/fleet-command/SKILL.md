@@ -115,6 +115,13 @@ For each subtask in the current layer, up to the concurrency cap at a time:
    `git worktree add -b feat/<ticket-slug>--<subtask-slug> .worktrees/<branch> <base>` from the
    main working copy. Branch from the integration branch alone and a dependent subtask starts
    without the code it depends on.
+
+   Then copy every gitignored env file (`.env`, `.env.local`, `.env.<name>`, but not
+   `.env.example`) from the main working copy to the same path in the worktree. Look in the
+   repo root and in each app and package. A new worktree has none of them, so its agent can't
+   start a dev server, take screenshots or run integration tests, and reports "not checked"
+   when it could have checked. Do the same for every worktree this skill makes, including
+   the consolidate one.
 2. Spawn one Agent-tool subagent (background), briefed explicitly since none of this is otherwise
    discoverable to it:
    - The absolute worktree path to work in (it must `cd` there — this is a separate working tree,
@@ -122,13 +129,22 @@ For each subtask in the current layer, up to the concurrency cap at a time:
    - The subtask's key. For a local-markdown tracker, the **absolute path to the issue file in the
      main working copy**, not a copy inside the worktree: tracker files are usually gitignored, so
      a copy disappears with the worktree, taking the agent's status and comment updates with it.
-   - The absolute paths to `.claude/agent-context/issue-tracker.local.md` and `code-host.local.md` in the
-     main working copy. They're gitignored, so the worktree doesn't have them
+   - The absolute path of every file in `.claude/agent-context/` in the main working copy
+     (`issue-tracker.local.md`, `code-host.local.md`, and any others such as a database or
+     code-quality note), each with a one-line note on what it covers. They're gitignored, so the
+     worktree doesn't have them
    - What its base already contains: which blockers' work is merged in and what each provides
      (components, interfaces, files moved), so it doesn't rebuild or work around them
    - Its own pair of ports for any dev, preview or test server, if the repo's config reads ports
      from the environment. Parallel worktrees on the same hard-coded port test each other's servers.
      If ports are hard-coded, say so in the brief and have the agent wait for a free port
+   - That its env files are already copied in, so it can run servers and integration tests
+   - How to make changes safely when its worktree is nested inside a session that is isolated
+     to its own worktree (Claude Code's worktree guard refuses shell commands it can't verify):
+     change files with the Edit and Write tools, never with shell heredocs, `sed -i` or
+     `cat >>`, because the tools fail loudly and a refused shell edit can be lost without a
+     sign. Run one git command per call, without `&&` chains or `git -C`. For anything else
+     the guard refuses, write the script to `/tmp` and run it as one command
    - **Briefs give context, never scope.** Scope comes only from the issue. Don't add constraints
      ("don't touch X") that the issue doesn't state; if the issue and a background doc disagree,
      the issue wins
