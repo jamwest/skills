@@ -82,7 +82,7 @@ Every prompt must end with: _"Do not invoke `/review` or spawn additional agents
 **Behaviour sub-agent prompt** — include:
 
 - The diff command and commit list. No spec: this axis judges the code against what it does, not what was asked, and reads surrounding code as needed to trace each path.
-- The brief: "Check the diff for seven things.
+- The brief: "Check the diff for eight things.
   (a) **Paths.** For each entry point the diff adds or changes (server function, route handler, exported function), list its outcome branches (e.g. created, linked, restored, refused). Flag any branch that skips a step its sibling branches do — saving an answer, crediting, writing the session, recording an audit.
   (b) **Repeats and partial failure.** For each sequence of writes or external calls, ask: what if the same request runs twice at once? What if it fails between steps? Flag any state left half-written, duplicated or orphaned, and any two writes in separate transactions that must succeed or fail together.
   (c) **Failure the user sees.** For each failure return or caught error, trace it to what the user is shown. Flag a message that blames the wrong thing, a failure swallowed with nothing shown, and a retry that cannot succeed.
@@ -93,13 +93,28 @@ Every prompt must end with: _"Do not invoke `/review` or spawn additional agents
     Flag a write that stores data against a different user than the one who loaded the page.
   (f) **Pages open across a deploy.** For each server function, endpoint or message whose input or result shape the diff changes but whose name or id stays the same, ask: what happens to a page or client built before the deploy? Flag a client that would crash on the new result shape. Also flag an input field whose meaning changes, because an old server drops fields it does not know and still reports success.
   (g) **Widened sets.** When the diff extends a rule from one member to a whole set (every form, every role, every tenant), check every member of the set, not just the one the tests use. Also check that a member outside the set is still refused.
+  (h) **Go back and change.** For each field, card or control that a different answer shows or hides, walk through this: answer it, go back, change the answer that controls it so it is hidden, then come forward again. Flag any saved value or setting from the hidden control that still has an effect: it disables something, gets submitted, or fails validation.
   Each finding cites file:line and gives a concrete scenario ('two submits from one account: …'). A Behaviour finding is never a judgement call — the scenario is real or it isn't. Never label a finding 'edge case' or 'low risk' to soften it. When a finding means data saved against the wrong user, or access the user should not have, prove it: write a throwaway test that fails on the current code, run it, report the result, then delete it. Do not commit it. Existing tests are not evidence that a path is safe — they may encode the same bug. Under 500 words."
 
 If the spec is missing, skip the Spec sub-agent and note this in the final report. Standards and Behaviour still run.
 
+### 4b. Pull static analysis issues
+
+Do this while the sub-agents run. It catches the rules the CI scanner runs and local lint doesn't.
+
+Skip this step if the repo has no `sonar-project.properties` file, or if `SONAR_TOKEN` is not set. Say in the report that you skipped it.
+
+1. Read `sonar.projectKey` from `sonar-project.properties`.
+2. Find the open PR for the current branch using the code host CLI. With no PR, use `&branch=<branch>` instead of `&pullRequest=<id>`.
+3. Fetch the PR's open issues. Never print the token:
+   `curl -s -u "$SONAR_TOKEN:" "https://sonarcloud.io/api/issues/search?componentKeys=<key>&pullRequest=<id>&resolved=false&ps=100"`
+4. List each issue as `severity rule file:line message`. Sonar only scans what was last pushed, so local commits after that push may already have fixed some issues. Say this if the branch is ahead of its remote.
+
+A Sonar issue in code the diff touched is a hard violation. If a rule keeps coming up and local lint has a matching rule, say so. That rule belongs in the repo's lint config.
+
 ### 5. Aggregate
 
-Present the reports under `## Standards`, `## Spec` and `## Behaviour` headings, verbatim or lightly cleaned. Do **not** merge or rerank findings — the axes are deliberately separate (see _Why three axes_). Don't soften a Behaviour finding into an "edge case" while cleaning it up.
+Present the reports under `## Standards`, `## Spec`, `## Behaviour` and `## Static analysis` headings, verbatim or lightly cleaned. If step 4b was skipped, the Static analysis section is one line saying why. Do **not** merge or rerank findings — the axes are deliberately separate (see _Why three axes_). Don't soften a Behaviour finding into an "edge case" while cleaning it up.
 
 End with a one-line summary: total findings per axis, and the worst issue _within each axis_ (if any). Don't pick a single winner across axes — that's the reranking the separation exists to prevent.
 
