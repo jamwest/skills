@@ -1,8 +1,7 @@
 ---
 name: retro
-description: Look back over a coding session and propose fixes to the agent's environment (navigation pointers, automated checks, coding standards, steering-file bloat, tool cost, information access) and to the skills themselves (a step that misled, was ambiguous, or let the change sprawl), so the next run goes better. Every candidate traces to a specific moment in the session; candidates are ranked, and only the ones the user picks get applied. Use when the user says "retro", "retrospective", "what went wrong in that session", "why was that so hard", or after /implement or /fleet-command suggests one.
+description: Look back over a coding session and propose fixes to the agent's environment (navigation pointers, automated checks, coding standards, steering-file bloat, tool cost, information access) and to the skills themselves (a step that misled, was ambiguous, or let the change sprawl), so the next run goes better. Every candidate traces to a specific moment in the session; candidates are ranked, and only the ones the user picks get applied. Use when the user says "retro", "do a retro", "retrospective", "look back on this session", "what went wrong in that session", "why was that so hard", "how could we have done that faster", "what should we change for next time", or after /implement or /fleet-command suggests one.
 subagent-role: interactive
-disable-model-invocation: true
 argument-hint: "optional session id, log path, or 'last' (defaults to the current session)"
 ---
 
