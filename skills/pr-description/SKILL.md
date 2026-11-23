@@ -53,9 +53,14 @@ say no.
   `.claude/pr/<slug>/`. It writes screenshots there, and one annotated PDF to `~/Desktop/PR evidence/<slug>.pdf`, and
   returns a markdown block already shaped for a PR description — use that block as-is
   under an "Evidence" heading. Don't re-caption or re-summarize it.
-- If `ui-evidence` can't run (no dev server, services down, a broken local database),
-  **stop and tell the user before anything is pushed or opened**, so they can start
-  what's missing. Don't push first and note the gap in the PR afterwards.
+  If `/implement` already built `~/Desktop/PR evidence/<slug>.pdf` for this branch and no UI
+  file changed since, reuse its block instead of capturing again.
+- If `ui-evidence` can't run (no dev server, services down, a broken local database, a login
+  with no test account), **stop and tell the user before anything is pushed or opened**, so they
+  can start what's missing. Don't push first and note the gap in the PR afterwards. This holds
+  when another skill or agent called you too: a brief that says to skip evidence doesn't
+  override it. Never write "not checked in a browser" under Evidence; the only alternatives to
+  shots are omitting the section (no UI change) or the user's own choice to skip, below.
 - If `ui-evidence` comes back without screenshots because the user chose to skip them,
   omit the Evidence heading and say in your handover that the description is going out
   unverified in a browser. Don't leave an empty heading, and don't imply shots exist.
