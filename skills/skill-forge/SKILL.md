@@ -85,7 +85,7 @@ Walk through the design one question at a time. Give your recommendation before 
 - Is this skill interactive (multi-turn conversation with the user) or deterministic (explore → write, no back-and-forth)?
 - Does it have distinct phases? (e.g. Explore → Present → Confirm → Write, like `init`)
 - Does it delegate to subagents? If yes, which roles — `scout`, `researcher`, `worker`, `reviewer`? (See [subagent-roles.md](./subagent-roles.md))
-- Should it set `disable-model-invocation: true`? (Use this for deterministic skills that should run without a model loop — rare.)
+- Should it set `disable-model-invocation: true`? Almost never. The flag hides the skill from the agent entirely: it can't pick it from a plain request ("do a retro"), and another skill or a fleet agent can't call it, so "run `/deepen`" in a brief silently fails. Set it only when the skill must never start without the user typing its name, such as one that hijacks the task in progress.
 
 **Branch E — Dependencies**
 
@@ -136,7 +136,7 @@ name: skill-name           # short, memorable, verb-friendly (e.g. grill, forge,
 description: ...           # specific enough for an agent to pick over neighbouring skills
 subagent-role: ...         # orchestrator | scout | researcher | worker | reviewer | interactive
 argument-hint: "..."       # only if the skill accepts a freetext argument (optional)
-disable-model-invocation: true  # only for fully deterministic skills (rare)
+disable-model-invocation: true  # almost never: hides the skill from the agent and other skills
 ---
 ```
 
