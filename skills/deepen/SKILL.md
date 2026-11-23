@@ -2,7 +2,6 @@
 name: deepen
 description: Scan a codebase for deepening opportunities — shallow modules, leaky seams, tangled boundaries — rank them, and hand the strongest candidate off to /grill or /wayfinder. Output is concise markdown, not an HTML report — a couple of full-detail "do this now, easy win" entries with a before/after and cost estimate, larger opportunities named but left thin until asked for. Use when the user wants an architecture review, asks "where's the tech debt", "what should we refactor", or has a spare moment to improve codebase health.
 subagent-role: scout
-disable-model-invocation: true
 argument-hint: "optional direction to scope the scan (a module, subsystem, or pain point) — otherwise inferred from recent commit hot spots"
 ---
 
