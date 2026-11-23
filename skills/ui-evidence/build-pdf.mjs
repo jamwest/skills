@@ -36,7 +36,8 @@
 
 import { readFile, writeFile, rm } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { realpathSync, statSync } from 'node:fs';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { open } from './capture-headless.mjs';
 
 function pngSize(buffer) {
@@ -174,11 +175,24 @@ ${pages.join('\n')}
   }
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+// Compare real paths: the skill folder is often reached through a symlink, and then
+// import.meta.url and argv[1] differ, so a plain string check silently does nothing.
+const runDirectly =
+  process.argv[1] !== undefined &&
+  realpathSync(fileURLToPath(import.meta.url)) === realpathSync(resolve(process.argv[1]));
+
+if (runDirectly) {
   const [manifest, out] = process.argv.slice(2);
   if (!manifest) {
     console.error('usage: build-pdf.mjs <evidence.json> [out.pdf]');
     process.exit(1);
   }
+  const written = resolve(out ?? join(dirname(resolve(manifest)), 'evidence.pdf'));
+  const before = Date.now();
   await buildPdf(manifest, out);
+  if (statSync(written, { throwIfNoEntry: false })?.mtimeMs < before) {
+    console.error(`build-pdf: no PDF written to ${written}`);
+    process.exit(1);
+  }
+  console.log(written);
 }

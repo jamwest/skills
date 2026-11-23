@@ -49,6 +49,13 @@ List the pages the change touches, then for each one the *states* that demonstra
 States are where the evidence lives: a hidden-until-valid button needs both the empty
 form and the filled one. One screenshot per claim in the acceptance criteria is a good
 rule of thumb.
+
+**One shot for each option that changes what renders.** If a choice shows or hides
+fields or cards, or changes the next screen, take one shot per option, not just the
+one the change is about. Example: a gender choice where only "Another" shows a text
+box needs a shot of "Male" and of "Female" too, so the reviewer sees what each
+option shows. A changed existing card needs every state it can be in. The shot you
+skipped is often the one that shows the design is wrong.
  
 Keep it tight — 2 to 5 shots proves most changes. Ten near-identical screenshots read
 as noise and bury the one that matters.
@@ -64,6 +71,20 @@ reaching the state need a session you cannot create yourself?* A real login — 
 Auth0, SSO, an account you must not type a password for — means yes. A dev server with
 seeded data, a mock backend, a fixture credential that is committed to the repo, or no
 auth at all means no.
+
+**Before you answer yes, look for the repo's own way in.** Many repos behind a real login
+already have a tool that signs in a test user without a browser: a screenshot or "screens"
+script, an end-to-end suite, a Playwright `globalSetup` that logs in and saves a session,
+a seed script that makes a signed-in account. Search for them: `**/screens/README.md`,
+`playwright*.config.*` with a `globalSetup`, `e2e/` or `tests/e2e/` folders, and README
+sections about screenshots. If one exists and its credentials are already set up, the
+answer is no. Use that tool, or its sign-in helper with `capture-headless.mjs`, and
+treat it as the headless path. Asking the user to connect the extension when the repo can
+already sign in costs them a round trip for nothing.
+
+A tool like this often rewrites its output folder on every run. Copy each shot into your
+evidence folder as soon as you have checked it. A later run, even a diagnostic one, can
+replace a good shot with one taken in a different state.
  
 - **Yes → the user's real Chrome**, below. It is the only way in, because you must never
   type credentials past a sign-in wall and their Chrome is already through it.
@@ -230,6 +251,15 @@ habit in the whole skill, and the most tempting one to skip.
  
 **Read each PNG you captured.** Is it the right page, the right state, the framing you
 expected, no banner, no stray hover tooltip? Retake anything that isn't right.
+
+Then look at how it looks, not only which state it shows:
+- **Spacing.** Compare the gaps around new elements with the gaps between the
+  elements next to them. A gap twice the size of its neighbours usually means two
+  paddings or margins added together.
+- **Disabled, empty and placeholder states.** Each one must be clearly different
+  from the background and from the enabled state. Grey on light grey fails.
+- **Alignment.** New elements line up with the edges of their neighbours.
+Say what you checked in the caption, or fix it before sending.
 Screenshots are the deliverable, and shipping a wrong one is worse than shipping none.
  
 This is not a formality, and scripting does not excuse it — a scripted run repeats a
