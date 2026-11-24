@@ -21,37 +21,32 @@ here sends the user down the wrong flow with confidence.
 
 ## The main flow: idea → shipped code
 
-1. **`/grill`** — sharpen a plan or design by interview. Doc-anchored if `CONTEXT.md`/`docs/adr/`
-   exist, freeform otherwise. **If the idea is too big and too foggy for one sitting** — a
-   greenfield project, a build spanning many sessions — use `/wayfinder` instead: it charts a
-   shared map of decision tickets on the issue tracker and resolves them one at a time across
-   sessions, then hands off to `/blueprint` once the map clears. Session count is the test, not
-   project size.
-2. **`/blueprint`** — turn the grill session (or a freetext brief) into a structured design doc
-   under `.claude/blueprints/`.
-3. **`/break-it-down`** — decompose the blueprint into tracked work items in the configured issue
-   tracker (Jira, GitHub Issues, or local markdown — see `docs/agents/issue-tracker.md`).
-4. **`/implement`** — build one subtask in three phases — make it work (red-green TDD), make it
-   right (design pass scoped to the diff), make it fast (only when needed) — from its issue key or a
-   local scratch path. Ends with one bounded, automatic `/review` round of its own: a fresh
-   sub-agent reviews the diff, `/implement` auto-fixes hard/spec findings and re-reviews once,
-   then stops — it doesn't loop until clean, and leaves judgement-call smells for you.
-   **If the parent ticket has several subtasks ready at once** — use `/fleet-command` instead of
-   calling `/implement` on each one in turn: it works out which subtasks are independent versus
-   dependent, then dispatches one `/implement` subagent per subtask into its own git worktree and
-   branch off a shared integration branch, committing and cleaning up each worktree as agents
-   finish.
-5. From there it's a manual, one-at-a-time call: **`/review`** again yourself if you want a second
-   look (the judgement-call smells `/implement` deliberately left, or a check right before
-   opening the PR), **`/pr-description`** to draft the PR (pulls in `/ui-evidence` itself if the
-   change has a visible UI effect), **`/tidy-branch`** first if the history's gotten messy,
-   **`/commit`** for any commit message along the way — `/implement` never commits on its own,
-   so there's usually one waiting here even before the PR. Closing the issue and opening the PR
-   stay manual — nothing here chains into the next step on its own.
+1. **`/grill`** — sharpen a plan or design by interview, and write the settled what and why into
+   the ticket. Doc-anchored if `CONTEXT.md`/`docs/adr/` exist, freeform otherwise. **If the idea
+   is too big and too foggy for one sitting** — a greenfield project, a build spanning many
+   sessions — use `/wayfinder` instead: it charts a shared map of decision tickets on the issue
+   tracker and resolves them one at a time across sessions, then hands off to `/change-plan` once
+   the map clears. Session count is the test, not project size.
+2. **`/change-plan`** — read the code the whole ticket touches (sibling paths, shared seams),
+   propose the split (seam subtasks first, then behaviour subtasks, each with its non-test file
+   list), settle product calls, and create the subtasks once you approve. Plan lives in
+   `~/runs/<repo>/<ticket>.md`.
+3. **`/implement`** — build one subtask: plans it against current code (`/change-plan` subtask
+   size), makes the planned seam commits, then make it work (red-green TDD), make it right (check
+   the plan was followed), make it fast (only when needed). One `/review` + `/brittle-tests` round
+   against the plan (a second only if the first found a bug or a wrong plan answer), then it
+   commits, pushes and opens a draft PR with no reviewers.
+   **If the parent ticket has several subtasks** — use `/fleet-command` instead: it dispatches one
+   `/implement` subagent per subtask from the approved plan, each in its own git worktree, stacked
+   on what it depends on.
+4. From there: marking a draft ready and adding reviewers is asked once, when the pipeline is
+   green, Sonar is clean, evidence is attached and no questions are open. **`/review`** again
+   yourself for a second look, **`/tidy-branch`** if the history's gotten messy, **`/commit`** for
+   any commit outside `/implement`.
 
-**Skip steps 2–3 for small, single-session work.** Go straight from `/grill` (or no grill at all)
-to `/implement` with a freetext task description — the blueprint/tracker overhead only pays for
-itself once a build spans more than one sitting or needs a paper trail.
+**Small, single change?** Go straight to `/implement` with the issue key or a freetext
+description. It plans the change itself at subtask size; the ticket-size plan pays for itself once
+a ticket has more than one change in it.
 
 ## Branches off the main flow
 
@@ -95,7 +90,7 @@ Not feature work — upkeep, run whenever there's a spare moment.
 
 ## Precondition
 
-**`/setup-agent-context`** — run before the first use of `/break-it-down`, `/blueprint`,
+**`/setup-agent-context`** — run before the first use of `/change-plan`,
 `/implement`, `/deepen`, `/wayfinder`, or `/review` if `docs/agents/` isn't configured yet. Those
 skills will flag it themselves if something's missing, but running it upfront avoids the
 interruption.

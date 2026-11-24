@@ -1,6 +1,6 @@
 ---
 name: setup-agent-context
-description: Sets up an `## Agent skills` block in AGENTS.md/CLAUDE.md, `docs/agents/`, and `CONTRIBUTING.md` so skills know this repo's issue tracker (GitHub, Jira, or local markdown), code host (GitHub, Bitbucket, GitLab, etc.), workflow conventions (branch naming, commit format, merge strategy, PR title format), coding standards (style, lint, architectural patterns), and domain doc layout. Run before first use of `break-it-down`, `blueprint`, `implement`, `deepen`, `wayfinder`, or `fleet-command` — or if those skills appear to be missing context about the issue tracker, code host, or domain docs.
+description: Sets up an `## Agent skills` block in AGENTS.md/CLAUDE.md, `docs/agents/`, and `CONTRIBUTING.md` so skills know this repo's issue tracker (GitHub, Jira, or local markdown), code host (GitHub, Bitbucket, GitLab, etc.), workflow conventions (branch naming, commit format, merge strategy, PR title format), coding standards (style, lint, architectural patterns), and domain doc layout. Run before first use of `change-plan`, `implement`, `deepen`, `wayfinder`, or `fleet-command` — or if those skills appear to be missing context about the issue tracker, code host, or domain docs.
 disable-model-invocation: true
 subagent-role: interactive
 ---
@@ -45,7 +45,7 @@ Assume the user does not know what these terms mean. Each section starts with a 
 
 **Section A — Issue tracker.**
 
-> Explainer: The "issue tracker" is where issues live for this repo. Skills like `fleet-command`, `blueprint`, `break-it-down`, and `wayfinder` read from and write to it — they need to know whether to call `gh issue create`, use Jira via `atlassian-cli`, write a markdown file under `.claude/scratch/`, or follow some other workflow you describe. Pick the place you actually track work for this repo.
+> Explainer: The "issue tracker" is where issues live for this repo. Skills like `fleet-command`, `change-plan`, and `wayfinder` read from and write to it — they need to know whether to call `gh issue create`, use Jira via `atlassian-cli`, write a markdown file under `.claude/scratch/`, or follow some other workflow you describe. Pick the place you actually track work for this repo.
 
 Default posture: local markdown unless the user says otherwise. If a `git remote` points at GitHub and the user seems to be tracking work there, surface GitHub Issues as a suggestion. If a Jira domain is discoverable (from environment variables, a `.jira` config file, or the user mentions it), surface Jira as a suggestion. Always confirm before writing.
 

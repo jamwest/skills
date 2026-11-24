@@ -29,8 +29,8 @@ produce decisions, not deliverables.
 
 ## What this skill does NOT do
 
-- Build anything. When the map clears, hand off to `/blueprint` (collapse the map's decisions into
-  a buildable design doc) → `/break-it-down` → `/implement`, the same as any other planning input.
+- Build anything. When the map clears, write the map's decisions into a ticket's what and why, then
+  hand off to `/change-plan` → `/implement`, the same as any other planning input.
 - Resolve more than one ticket per session — except `research` tickets, which can run several in
   parallel.
 - Write CONTEXT.md/ADR updates itself outside of a `grilling` ticket — that happens inside
@@ -50,7 +50,7 @@ User invokes with a loose idea, no existing map.
    whole space rather than deep on any one thread, surfacing the open decisions and the first
    steps takeable now. **If this surfaces no fog** — the way to the destination is already clear,
    small enough for one session — you don't need a map. Stop and ask the user how they'd like to
-   proceed instead (probably straight to `/blueprint`).
+   proceed instead (probably straight to `/change-plan`).
 3. **Create the map**, labelled `wayfinder:map`: Destination and Notes filled in, Decisions-so-far
    empty, the fog sketched into Not yet specified.
 4. **Create the tickets you can specify now** as child issues of the map, then wire blocking edges

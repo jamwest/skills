@@ -24,7 +24,7 @@ Writes code, edits files, runs tests, makes commits. The agent that does the act
 Reads output (code, PRDs, plans) and produces structured feedback. Does not edit files — only comments. Example: `review`.
 
 **`interactive`**
-Multi-turn conversation with the user. Doesn't fit neatly into the automated pipeline — intended for sessions where the human is in the loop throughout. Examples: `grill`, `skill-forge`, `blueprint`.
+Multi-turn conversation with the user. Doesn't fit neatly into the automated pipeline — intended for sessions where the human is in the loop throughout. Examples: `grill`, `skill-forge`, `change-plan`.
 
 ## Picking a role
 

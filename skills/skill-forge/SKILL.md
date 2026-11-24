@@ -19,8 +19,8 @@ They're what makes a skill work well with a large-context model rather than figh
   file, read only when that branch is active. Don't inline every branch into `SKILL.md` so each
   run pays the token cost of content it doesn't need. `setup-agent-context`'s per-host/per-tracker
   templates and `implement`'s per-topic files (`tests.md`, `mocking.md`, `refactoring.md`, ...) are
-  the pattern to imitate; `break-it-down`'s per-tracker creation steps (`create-jira.md`,
-  `create-github.md`, `create-local.md`) are the same idea applied after the fact.
+  the pattern to imitate; `change-plan`'s per-tracker creation steps (`create-jira.md`,
+  `create-github.md`, `create-local.md`) are the same idea.
 
 - **Trust the model's judgment.** Write for a capable model, not a brittle one. Reserve long,
   explicit, repeated instruction for the few things that are genuinely non-obvious or where a
@@ -92,7 +92,7 @@ Walk through the design one question at a time. Give your recommendation before 
 - Does it reference format specs, templates, or seed files? (e.g. `grill` bundles `adr-format.md` and `context-format.md`)
 - Does it have content that's only relevant to a subset of runs — one branch per tracker, host, or
   mode? If so, each branch becomes its own bundled file read conditionally, not an always-loaded
-  section of `SKILL.md` (see `setup-agent-context`'s per-host templates or `break-it-down`'s
+  section of `SKILL.md` (see `setup-agent-context`'s per-host templates or `change-plan`'s
   per-tracker creation steps).
 - Does it call other skills by name? List them explicitly so the dependency is visible.
 - Will it work on a local LLM without browser access? If it relies on web search or external APIs, flag that `researcher` subagent role is needed and it will degrade on the pi.

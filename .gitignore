@@ -2,8 +2,7 @@
 .DS_Store
 .ignore/
 
-# Skillset working state — blueprints and local-tracker scratch files, not project docs.
-.claude/blueprints/
+# Skillset working state — local-tracker scratch files and evidence, not project docs.
 .claude/scratch/
 .claude/ui/
 .claude/pr/
