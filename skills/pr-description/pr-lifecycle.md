@@ -38,8 +38,8 @@ A PR is ready when all of these hold:
 - Every known defect has the user's decision.
 
 When they hold, say the PR is ready, list the checks, and ask once: _"Mark PR <id> ready and add
-reviewers?"_ On yes, flip it and add the reviewers named in `docs/agents/code-host.md` (else the
-repo's default reviewers). GitHub: `gh pr ready <id>` then `gh pr edit <id> --add-reviewer ...`.
+reviewers?"_ On yes, flip it and add the reviewers named in `docs/agents/code-host.md` or
+`.claude/agent-context/code-host.local.md` (else the repo's default reviewers). GitHub: `gh pr ready <id>` then `gh pr edit <id> --add-reviewer ...`.
 Bitbucket: `atlassian-cli bb api -X put -d '{"draft":false}' /2.0/repositories/<ws>/<repo>/pullrequests/<id>`
 then `atlassian-cli bb pr update <repo> <id> --reviewers <uuid>,...`.
 
