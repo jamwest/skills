@@ -1,24 +1,23 @@
 ---
 name: implement
-description: Implement a task from the issue tracker in three disciplined phases — make it work (red-green TDD), make it right (design pass scoped to the diff), make it fast (only for a stated perf requirement or obvious hotspot) — then run one bounded review-and-fix round before handing off. Use after /break-it-down when starting work on a subtask — accepts an issue key (PROJ-124, GH-42) or a local .claude/scratch path. The final step in the pipeline: grill → blueprint → break-it-down → implement.
+description: Implement a task from the issue tracker. First plans the subtask against the code as it is now (/change-plan subtask size), then builds it in three disciplined phases — make it work (red-green TDD, planned seam commits first), make it right (check the plan was followed), make it fast (only for a stated perf requirement or obvious hotspot) — runs one review-and-fix round against the plan, then commits, pushes and opens a draft PR. Use when starting work on a subtask, or on one small change — accepts an issue key (PROJ-124, GH-42) or a local .claude/scratch path. Pipeline: grill → change-plan → implement (or fleet-command) → review.
 subagent-role: worker
 argument-hint: "issue key or path (e.g. PROJ-124, GH-42, .claude/scratch/slug/issues/01-task.md)"
 ---
 
 # Implement
 
-Take a task from the issue tracker and implement it in three phases — **make it work, make it
-right, make it fast** ([c2](https://wiki.c2.com/?MakeItWorkMakeItRightMakeItFast)) — with
-test-driven development driving the first. This is the final step in the pipeline:
-`grill → blueprint → break-it-down → implement`.
+Take a task from the issue tracker, plan it against the current code, and implement it in three
+phases — **make it work, make it right, make it fast**
+([c2](https://wiki.c2.com/?MakeItWorkMakeItRightMakeItFast)) — with test-driven development
+driving the first. Pipeline: `grill → change-plan → implement (or fleet-command) → review`.
 
-The change stays as small as the task. Each phase has a scope rule, and step 7 checks the final
-diff against it — improvements outside that scope get reported, not made.
+The change stays as small as the plan. `/change-plan` found the seams and sibling paths before
+any code existed. This skill builds what the plan says, notes every file it didn't plan, and stops
+to re-plan when the change outgrows the plan.
 
-The output is working, tested code plus one bounded review-and-fix round (step 8) — not a loop
-until clean — and, for anything visible in a browser, the evidence PDF (step 9). Issue management
-(closing the issue, opening a PR, updating status) is out of scope and stays manual — see the end
-of the report.
+The output is working, tested code, one review-and-fix round against the plan (step 8), and a
+draft PR (step 10).
 
 ## Process
 
@@ -30,6 +29,10 @@ Check whether these exist at the repo root, and read whichever are present:
   `.claude/agent-context/issue-tracker.local.md` it points to
 - Also note the current `git rev-parse HEAD` before making any changes — call it `<start-sha>`.
   Steps 5, 7 and 8 diff against this point.
+- Once step 2 knows the task: the run file and questions file for its ticket, `~/runs/<repo>/<ticket>.md` and
+  `<ticket>.questions.md` (see [run-format.md](../change-plan/run-format.md) for the names). An
+  answered question is settled. Before asking the user anything, follow the questions-file rules
+  in [questions-format.md](../change-plan/questions-format.md).
 - `docs/agents/domain.md` — confirms whether `CONTEXT.md` is single or multi-context
 - `CONTEXT.md` — read for domain vocabulary; use it consistently in all identifiers and test names
 - `CONTRIBUTING.md` — its "Coding standards" section records this repo's actual style, lint, and
@@ -62,30 +65,44 @@ Only interrupt the user if something critical is genuinely missing:
 
 - Scope is ambiguous — two valid interpretations would lead to different interfaces
 - No public interface can be inferred from the description
-- The task appears to span multiple surfaces and hasn't been flagged for splitting
+- The task appears to span multiple surfaces and hasn't been flagged for splitting. Suggest
+  `/change-plan <ticket>` at ticket size instead.
 
-If you must ask, ask **one targeted question**, not a checklist. If the task came from
-`break-it-down`, it will almost always have enough context to proceed silently.
+If you must ask, ask **one targeted question**, not a checklist, through the questions file. If
+the task came from `/change-plan`, it will almost always have enough context to proceed silently.
 
-### 3. Plan (silent)
+### 3. Plan the subtask
 
-Before writing any code, build a working plan in context — do not output it as a document:
+Run `/change-plan`'s **subtask size** for this task, inline in this session (not a subagent). It
+reads the ticket plan's section for this subtask, checks it against the code as it is now, and
+writes `## <KEY> plan` to the run file: the exact non-test files (the file budget), the seam
+commits in order, the behaviour commits, the checklist answers and the behaviours to test. With no
+ticket plan (one small change), it plans the change on its own.
 
-- Identify the public interface(s) to add or change — the shape callers need, nothing more.
-  Internal structure is decided in step 5, once there's working code to shape.
-- List behaviors to test, drawn from acceptance criteria (not from implementation steps)
-- Note system boundaries that require mocking — see [mocking.md](./mocking.md)
-- Note any performance requirement the task states (latency, throughput, size limits) — step 6
-  needs it
-- Note the files you expect to touch. Step 7 checks the final diff against this list.
+It stops only for a product call the plan didn't settle, a file list over budget, or a
+contradiction with the ticket plan. Then this skill stops too and asks, through the questions
+file. Otherwise carry on without asking.
+
+Also note, in context:
+
+- The public interface(s) to add or change — the shape callers need, nothing more
+- System boundaries that require mocking — see [mocking.md](./mocking.md)
+- Any performance requirement the task states (latency, throughput, size limits) — step 6 needs it
 
 The work then runs in three phases, in order — **make it work, make it right, make it fast**.
 Never mix them: don't design while RED, and don't optimise before the code is right.
 
 ### 4. Make it work
 
-Red → green, one behavior at a time, with a small tidy after each green. Correct and ugly beats
-elegant and unproven — design comes in step 5.
+**Seam commits first.** Before any behaviour change, make each seam commit the plan lists, in
+order. Each is a refactor with no behaviour change: the existing tests stay green without edits to
+what they assert (see [refactoring.md](./refactoring.md)). Run the full suite, then commit it on
+its own as a `refactor` commit in `CONTRIBUTING.md`'s format. A latent bug found while making a
+seam is fixed only as the plan allows: its own commit, with a regression test that fails before
+the fix (see `/change-plan` T3).
+
+Then the behaviour: red → green, one behavior at a time, with a small tidy after each green.
+Correct and ugly beats elegant and unproven — design comes in step 5.
 
 Follow strict vertical slicing — **one test → one implementation → repeat**. Never write more
 than one failing test at a time.
@@ -136,51 +153,24 @@ Rules per cycle:
 
 ### 5. Make it right
 
-All acceptance criteria are covered and the suite is green. Now make one design pass over the
-whole diff (`git diff <start-sha>`) — see [refactoring.md](./refactoring.md) for candidates and
-[deep-modules.md](./deep-modules.md) / [interface-design.md](./interface-design.md) for what
-"right" looks like.
+All acceptance criteria are covered and the suite is green. The seams came from the plan, before
+the code, so this step is a check, not a redesign. Over the whole diff (`git diff <start-sha>`):
 
-What you may change depends on where the code sits:
+- **Each planned seam done?** Every seam commit the plan lists is in the commit list, with no
+  behaviour change in it.
+- **Each off-list file noted?** List the non-test files the diff changes (tests and fixtures
+  don't count) against the plan's file list. Write one line for each file not on the list: why the
+  work needed it. These go in the run file's `### Actual` section and the report.
+- **Code this task added is clean?** Any refactor of the task's own code that keeps tests green is
+  fine (see [refactoring.md](./refactoring.md), [deep-modules.md](./deep-modules.md),
+  [interface-design.md](./interface-design.md)). Code the task didn't add gets nothing beyond a
+  small tidy in a file already touched.
+- **Second copy?** If the diff adds a second copy of something that already exists (a lookup, a
+  formatter, a type), point both at one shared version. That file is off-list: note it.
 
-| Where | What's allowed |
-| --- | --- |
-| Code this task added or changed | Any refactor that keeps tests green — extract, deepen, rename, move. |
-| Elsewhere in files the task already touched | Small, local "leave it better than you found it" tidies: a clearer name, dead code removed, a tiny extract next to your change. Nothing that changes an interface another file depends on. |
-| Files the task didn't touch | Nothing, except the second-copy rule and the look-back below. Record what you noticed for the report. |
-
-**Second copy.** If the diff adds the second copy of something that already exists — a lookup
-table, a formatter, a type, a helper — extract one shared version and point both copies at it,
-even when the existing copy sits in a file the task didn't otherwise touch. This is allowed only
-while the change stays confined: a few files and no change to a public interface. Two copies are
-where drift starts (one reads `s`, the other `sec`), and the agent that writes the second copy is
-the only one placed to notice it.
-
-**Seam candidates.** If the work exposes an obvious missing seam or a shallow module in existing
-code, decide. If it's confined and makes this change clearly simpler, build it now. Otherwise
-leave it, and record it in the report as a decision for `/deepen`: where it is, what the seam
-would be, roughly which files it'd touch, and why you didn't build it. The look-back below is the
-exception.
-
-**Look back at how hard the change was.** Count the files the change touched
-(`git diff --stat <start-sha>` plus untracked files) and ask why there are that many. If the
-count comes from repeated wiring (each caller sets up the same thing itself), or from tests that
-break on argument positions or mock shape, the code was missing a seam. Build the seam that would
-have made the change small, even in files the task didn't otherwise touch:
-
-1. Tell the user in one line what you're doing and why, e.g. _"The change touches 12 cron files
-   because each job wires its own queue. Adding a shared `startCronJob` first."_ Don't wait for
-   permission.
-2. Set the change aside: `git stash push --include-untracked`.
-3. Refactor on clean code, with no behaviour change. Run the full suite after each step.
-4. Commit the refactor on its own, in `CONTRIBUTING.md`'s commit format (a `refactor` commit).
-5. Put the change back with `git stash pop`, move it onto the new seam, and run the full suite.
-   Leave the change uncommitted, so it lands as its own commit on top of the refactor.
-6. Note the file counts for the report: the change before the refactor, the change after it
-   (`git diff --stat HEAD`), and the refactor commit.
-
-This is the only commit this skill makes. Steps 7 and 8 still diff against `<start-sha>`, so the
-refactor commit is included.
+A seam the plan missed (the change grew because each caller wires the same thing) is not built
+here. If it pushes the file list over budget, step 7 stops for a re-plan. If not, name it in the
+report as a seam the plan missed: it feeds the next plan.
 
 **Never refactor while RED.** Run the full test suite after each refactor step.
 
@@ -217,13 +207,22 @@ Perf concerns outside the diff, or ones you can't measure, go in the report — 
 Before review, list everything the task changed: `git diff --stat <start-sha>` plus
 `git status --short` for new untracked files.
 
-For each file, confirm it's either one step 3 expected, one the work genuinely needed (a new
-test file, a wiring change), a step 5 tidy in an already-touched file, a step 5 second-copy
-extraction, or part of a step 5 look-back refactor commit. Anything else — a "while I was here"
-fix, an unrelated formatting change, a refactor in a file the task didn't otherwise need — revert
-it and add it to the report instead. Re-run the full suite after any revert.
+Compare the non-test files with the ticket plan's file list for this subtask (or the subtask plan's
+list, when there's no ticket plan):
 
-### 8. Review once, fix once
+- **Re-plan** when there are more than 3 non-test files beyond that list, or any off-list file in an
+  area the plan didn't cover (another app, a new package). Stop, run `/change-plan` subtask size
+  again with what you found, and continue only from the new plan. If the new plan changes the
+  split, that's the user's call (`/change-plan` T8).
+- **Otherwise** each off-list file needs its one-line why from step 5. A file with no honest why
+  — a "while I was here" fix, an unrelated formatting change — gets reverted and named in the
+  report. Re-run the full suite after any revert.
+
+Write the run file's `### Actual` section under `## <KEY> plan`
+([run-format.md](../change-plan/run-format.md)): planned vs actual non-test files, each off-list
+file with its why.
+
+### 8. Review once, against the plan
 
 Once the diff-scope check is done and the full suite passes, spawn two fresh Agent-tool
 subagents **in parallel** (single message, two tool calls): one runs `/review`'s process, the other
@@ -233,14 +232,17 @@ the code.
 
 Brief the `/review` subagent explicitly, since none of this is otherwise discoverable:
 
-- **Fixed point**: `<start-sha>` from step 1. The task is mostly uncommitted (only a step 5
-  look-back refactor, if any, is committed), so tell the subagent to diff with
+- **Fixed point**: `<start-sha>` from step 1. Seam commits are committed and the behaviour change
+  isn't yet, so tell the subagent to diff with
   `git diff <start-sha>` (working tree included) instead of review's usual three-dot `...HEAD`
   form.
-- **Spec**: the issue/blueprint content already fetched in step 2, plus the overrides list from
+- **Spec**: the issue content already fetched in step 2, plus the overrides list from
   step 2. Skip review's own spec-source discovery entirely — the spec is already known. Tell the
   Spec sub-agent to review against the issue text and report every difference, including ones an
   override explains. Those are labelled "override, issue needs updating", not dropped.
+- **Plan**: the run file path and the `## <KEY> plan` section, so the Behaviour axis checks the
+  code against the plan's checklist answers, step 4c checks the file list, and step 6 records the
+  findings in the run file.
 
 Brief the `/brittle-tests` subagent:
 
@@ -259,30 +261,35 @@ From the reports that come back:
   (see Report below), not as an open question.
 
 **A finding a reviewer reports as wrong is a defect, not a decision.** Before you treat one as a
-defect, check it against what is already settled: the issue, its parent ticket, the blueprint and
-the overrides. Behaviour the spec asks for on purpose is not a defect; record it as a decision
+defect, check it against what is already settled: the issue, its parent ticket, the plan, the
+answered questions and the overrides. Behaviour the spec asks for on purpose is not a defect; record it as a decision
 citing the line that settles it, and don't send it to the user to decide again.
 
 A real defect inside the task's goal gets fixed, even when the fix needs a file the diff didn't
 touch yet: a server check the spec implies, the same rule applied on a sibling path. Step 5's
-scope limits tidying, not fixing what the task exists to deliver. A Spec "wrong" or a Behaviour
+scope limits tidying, not fixing what the task exists to deliver. A file the fix adds is
+off-list: note it, and it counts toward step 7's re-plan limit. A Spec "wrong" or a Behaviour
 finding may stay unfixed only when the fix belongs to a different task, or needs a product
 decision the spec doesn't answer. Then it goes in the report's **Known defects** section: the reviewer's
 text quoted word for word, the concrete scenario, and why it wasn't fixed. Never reword it as a
 decision, an "edge case" or "low risk", and never leave it out — whoever reads the report decides
 whether the scenario matters, not you.
 
-After fixing, re-run the full test suite, then run both reviews (`/review` and `/brittle-tests`)
-**one more time** against the same
-fixed point to confirm the fixes landed and didn't introduce a new hard violation or brittle
-pattern. Fixes follow step 5's scope rules — a finding that would need changes outside the diff
-goes in the report instead. If the second round flags a new hard violation, Spec or Behaviour
-finding, or **High**-confidence brittle-tests finding, fix it and re-run the suite; don't send it back
-unfixed. Stop there — no third review round.
+After fixing, re-run the full test suite. Run both reviews a **second time** only if the first
+round found a bug (a Spec missing or wrong finding, or a Behaviour finding) or a wrong plan
+answer. Otherwise one round is enough. In the second round, fix any new hard violation, Spec or
+Behaviour finding, or **High**-confidence brittle-tests finding and re-run the suite; don't send
+it back unfixed. Stop there — no third round. A wrong plan answer also gets corrected in the
+`## <KEY> plan` section, marked "(corrected)", so the next subtask plans from the right answer.
 
-Report decisions, not open questions. Every judgement call (defects aside — see Known defects) made along the way — a spec gap you
-filled, a review finding you fixed or left, a seam you built or didn't, a copy choice the spec
-didn't cover — goes in the report as:
+**When review may be skipped.** Only for a subtask kind (seam or behaviour) whose last 5 reviewed
+subtasks in `~/runs/<repo>/` all had `clean: yes`, with no "Human reviewer miss" since. Count it
+from the run files and name the count in the report. A human reviewer's miss puts that kind back
+to always reviewed. `/brittle-tests` still runs.
+
+Report decisions, not open questions. Known defects go in their own section. Every other
+judgement call goes in the report: a spec gap you filled, a review finding you fixed or left, an
+off-list file you kept, a copy choice the spec didn't cover. Write each as:
 
 - **Chose**: what you did
 - **Why**: the reason, citing the spec, a standard, or the code
@@ -290,51 +297,62 @@ didn't cover — goes in the report as:
   stored data — or "none"
 
 Escalate as a question only what is genuinely the user's call: a choice that contradicts the spec
-or blueprint, product or copy direction the spec doesn't cover and that can't be undone cheaply,
-or an irreversible or outward-facing action. Even then, say what you'd choose and why.
+or the plan, product or copy direction the spec doesn't cover and that can't be undone cheaply,
+or an irreversible action. Ask it through the questions file
+([questions-format.md](../change-plan/questions-format.md)), with what you'd choose and why.
 
 **When step 8 can't run.** A forked agent, or any agent without the Agent tool, cannot spawn the
 review subagents. Don't skip step 8 quietly. Put **Review not run** as the first line of the
 report, with the fixed point, so whoever reads it runs `/review` and `/brittle-tests` before the
 PR. This applies to rework too: any later change to this task's code (a rework after a user
-decision, a fix-up, a refactor pass) ends with step 8 against the commit the change started from.
+decision, a fix-up, a refactor pass) ends with step 8 against the commit the change started from,
+with the same one-round rule.
 
-### 9. Evidence
+### 9. Quick checks in a browser
 
-If any part of the change is visible in a browser, run `/ui-evidence` now, on the reviewed code.
-It finds the repo's own way to sign in, captures each state, and builds the PDF the PR will carry.
-Bugs it shows are fixed here, with a test, and step 8's suite re-run, while the task is still
-open. Found after the PR is up, the same bug costs a rework round, a restack and a new PDF.
+Evidence for the PR is captured once, at PR time, by `/pr-description` (step 10), following the
+plan's shot list. Don't build the evidence PDF here.
 
-A brief from a caller never switches this step off. If you can't reach a screen (a login with no
-test account, a service that isn't running), stop on that screen and put **Evidence blocked** as
-the first line of the report, with what is missing. Finish everything else. Never write "not
-checked" and carry on: the caller can usually unblock it in a minute, and can't once the PR is
-open.
+While building, you may take quick check shots with `/ui-evidence`'s headless browser to get a
+screen right: does the new state render, is the label right. Bugs they show are fixed with a test,
+like any other. If a screen the plan's shot list names can't be reached (a login with no test
+account, a service that isn't running), say so at the top of the report, with what is missing:
+step 10's evidence will hit the same wall.
 
-Skip this step only when nothing renders differently. Say so in the report.
+### 10. Commit, push, open a draft PR
+
+When the suite, lint and typecheck pass and step 8 is done, follow
+[pr-lifecycle.md](../pr-description/pr-lifecycle.md) without asking: commit the behaviour change
+(seam commits are already in), using `CONTRIBUTING.md`'s format, on the subtask's branch (create
+it per `CONTRIBUTING.md` if you're on the base branch), push, and open a **draft** PR with no
+reviewers through `/pr-description`. It captures the evidence from the plan's shot list. Tell it
+the PR is a draft opened by `/implement`, so it doesn't stop to ask.
+
+When a caller (such as `/fleet-command`) names the branch and the PR base, use those.
+
+Skip this step when `CONTRIBUTING.md` says the repo is trunk-based with no PRs: commit to the base
+branch and stop. Don't push without the user's word in that case.
+
+Never mark the PR ready here. When the ready checks in
+[pr-lifecycle.md](../pr-description/pr-lifecycle.md) hold, say so and ask once.
 
 Report:
 
 - **Ticket out of date**: each override from step 2, or "none"
+- **Plan vs actual**: planned and actual non-test file counts, each off-list file with its why,
+  plan answers that were wrong, and any seam the plan missed
 - What got fixed, and anything either review still flags (with its citations)
-- **Evidence**: the PDF path from step 9, or why there is no UI to show
 - **Known defects**: every Spec "wrong" or Behaviour finding left unfixed, quoted word for word,
   with the scenario and why it wasn't fixed (see above). Write "none" if there are none
 - Decisions, in the Chose / Why / Impact form above
+- **Questions**: open entries in the questions file, or "none"
 - Make it fast: what was optimised and the measurement, or that it was skipped and why
-- Look-back: the file counts from step 5 if a refactor was built (e.g. _"change touched 12 files;
-  after the `startCronJob` refactor (9 files), it touches 3"_), or _"no refactor — N files, each
-  needed"_
-- Seam candidates left for `/deepen`, with why each wasn't built
 - Anything reverted by step 7 as out of scope
-
-Then note that opening the PR (`/pr-description`), cleaning up history (`/tidy-branch`), and
-closing the issue stay the user's call, made one at a time — this skill doesn't chain into any of them on its own.
+- **PR**: the draft PR link, and which ready checks still fail
 
 Always end the report with one line offering `/retro`. If the run hit friction — the second
-review round still flagged findings, step 7 reverted files, the look-back found a missing seam, or
-a lot of effort went into finding something — name it in that line. Don't run it; it's the
+review round still flagged findings, step 7 reverted files or forced a re-plan, a plan answer was
+wrong, or a lot of effort went into finding something — name it in that line. Don't run it; it's the
 user's call.
 
 ## Checklist per cycle
