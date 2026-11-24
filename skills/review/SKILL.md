@@ -118,14 +118,13 @@ End with a one-line summary: total findings per axis, and the worst issue _withi
 Only when step 2 found a run file. Add a `### Review` section under the subtask's `## <KEY> plan` section ([run-format.md](../change-plan/run-format.md)):
 
 - `kind`: seam or behaviour, from the plan
-- `clean`: yes when there are no bugs and no wrong plan answers
 - Counts, each finding counted once:
   - **bugs**: Spec missing or wrong findings, and Behaviour findings labelled "breaks a planned answer"
   - **wrong plan answers**: Behaviour findings labelled "plan answered wrongly or missed it"
   - **standards**: Standards and Static analysis findings
 - Each finding in one line, with what it should feed: the checklist (which item), a coding standard, or an automated check
 
-Then add this round's counts to the totals in the run file's frontmatter, unless the caller says the review is part of a fleet: then `/fleet-command` sums them (see run-format.md's parallel writers rule). A second round on the same subtask adds `### Review (round 2)` below the first; never overwrite a round. `clean` for the subtask comes from the first round.
+Then add this round's counts to the totals in the run file's frontmatter, unless the caller says the review is part of a fleet: then `/fleet-command` sums them (see run-format.md's parallel writers rule). A second round on the same subtask adds `### Review (round 2)` below the first; never overwrite a round.
 
 ## Why three axes
 

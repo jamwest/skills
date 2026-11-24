@@ -124,7 +124,6 @@ Tests: the behaviours to test, from the acceptance criteria.
 ### Review
 
 - kind: seam
-- clean: no               # yes = no bugs and no wrong plan answers
 - bugs: 1, wrong plan answers: 1, standards: 0
 - Bug: `weekly.ts:41` two runs at once send twice. Breaks planned answer (b). Feeds: an automated check (a test for two runs at once)
 - Wrong plan answer: (b) said "no writes", but the weekly job marks the week sent. Feeds: the checklist, a sharper Plan line for (b)

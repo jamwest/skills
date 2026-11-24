@@ -76,7 +76,7 @@ happened (a quote, a tool call, a turn). Signals worth looking for:
 - A review finding the plan should have caught: a wrong plan answer, an off-list file, a sibling
   path the plan missed
 - A human reviewer finding what `/review` missed. Record it in the run file as `Human reviewer
-  miss:` under that subtask's `### Review`, which puts that subtask kind back to always reviewed
+  miss:` under that subtask's `### Review`
 
 Anything you can't point back to a specific moment is not a finding. Drop it.
 

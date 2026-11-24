@@ -282,11 +282,6 @@ Behaviour finding, or **High**-confidence brittle-tests finding and re-run the s
 it back unfixed. Stop there — no third round. A wrong plan answer also gets corrected in the
 `## <KEY> plan` section, marked "(corrected)", so the next subtask plans from the right answer.
 
-**When review may be skipped.** Only for a subtask kind (seam or behaviour) whose last 5 reviewed
-subtasks in `~/runs/<repo>/` all had `clean: yes`, with no "Human reviewer miss" since. Count it
-from the run files and name the count in the report. A human reviewer's miss puts that kind back
-to always reviewed. `/brittle-tests` still runs.
-
 Report decisions, not open questions. Known defects go in their own section. Every other
 judgement call goes in the report: a spec gap you filled, a review finding you fixed or left, an
 off-list file you kept, a copy choice the spec didn't cover. Write each as:
