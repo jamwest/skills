@@ -1,6 +1,6 @@
 ---
 name: review
-description: Review the diff between HEAD and a fixed point (commit, branch, tag, or merge-base) along three axes — Standards (does the code follow this repo's documented coding standards?), Spec (does the code match what the originating issue or blueprint asked for?), and Behaviour (is it correct on the paths the spec doesn't list — sibling branches, concurrent repeats, partial failure, the error the user sees, who can reach each write, pages open across a deploy?). Runs each axis as a parallel sub-agent so none sees another's reasoning, then reports them side by side without merging or reranking. Use when the user wants to review a branch, a PR, work-in-progress changes, or asks to "review since X".
+description: Review the diff between HEAD and a fixed point (commit, branch, tag, or merge-base) along three axes — Standards (does the code follow this repo's documented coding standards?), Spec (does the code match what the originating issue asked for?), and Behaviour (is it correct on the paths the spec doesn't list — sibling branches, concurrent repeats, partial failure, the error the user sees, who can reach each write, pages open across a deploy, rollback, audit, every caller and screen?). When a /change-plan plan exists, checks the code against the plan's checklist answers and file list, and records the findings in the plan's run file. Runs each axis as a parallel sub-agent so none sees another's reasoning, then reports them side by side without merging or reranking. Use when the user wants to review a branch, a PR, work-in-progress changes, or asks to "review since X".
 subagent-role: reviewer
 argument-hint: "fixed point to diff against (commit, branch, tag, or merge-base), and optionally a spec path"
 ---
@@ -10,8 +10,8 @@ argument-hint: "fixed point to diff against (commit, branch, tag, or merge-base)
 Three-axis review of the diff between `HEAD` and a fixed point the user supplies:
 
 - **Standards** — does the code conform to this repo's documented coding standards?
-- **Spec** — does the code faithfully implement the originating issue or blueprint?
-- **Behaviour** — is the code correct on the paths the spec doesn't list: sibling branches, the same request twice at once, failure part-way through, what the user sees when it fails, who can reach each write, and pages left open across a deploy?
+- **Spec** — does the code faithfully implement the originating issue?
+- **Behaviour** — is the code correct on the paths the spec doesn't list? The items live in [change-checklist.md](./change-checklist.md), the same list `/change-plan` answers before code exists: sibling branches, the same request twice at once, failure part-way through, what the user sees when it fails, who can reach each write, pages left open across a deploy, rollback, audit, and every caller and screen.
 
 All three axes run as **parallel sub-agents** via the Agent tool so none pollutes another's context, then this skill aggregates their findings.
 
@@ -33,8 +33,9 @@ Look for the originating spec, in this order:
 
 1. Issue references in the commit messages or branch name (`#123`, `Closes #45`) — fetch the full issue via the workflow in `docs/agents/issue-tracker.md`, using the commands in the `.claude/agent-context/issue-tracker.local.md` it points to.
 2. A path the user passed as an argument.
-3. A blueprint file under `.claude/blueprints/` matching the branch name or feature (the output of `/blueprint`, which `/break-it-down` turns into the issue this branch implements).
-4. If nothing is found, ask the user where the spec is. If they say there isn't one, the **Spec** sub-agent is skipped and the report says so — never infer requirements from the code.
+3. If nothing is found, ask the user where the spec is. If they say there isn't one, the **Spec** sub-agent is skipped and the report says so — never infer requirements from the code.
+
+Then look for the **plan**: the run file `/change-plan` wrote, at `~/runs/<repo>/<ticket>.md` (see [run-format.md](../change-plan/run-format.md) for `<repo>` and `<ticket>`), where `<ticket>` is the issue's parent, or the issue itself when it has none. Take this subtask's `## <KEY> plan` section, or its entry in the ticket plan if there's no subtask section. No run file means no plan checks: say so in the report and carry on.
 
 ### 3. Identify the standards sources
 
@@ -82,20 +83,9 @@ Every prompt must end with: _"Do not invoke `/review` or spawn additional agents
 **Behaviour sub-agent prompt** — include:
 
 - The diff command and commit list. No spec: this axis judges the code against what it does, not what was asked, and reads surrounding code as needed to trace each path.
-- The brief: "Check the diff for nine things.
-  (a) **Paths.** For each entry point the diff adds or changes (server function, route handler, exported function), list its outcome branches (e.g. created, linked, restored, refused). Flag any branch that skips a step its sibling branches do — saving an answer, crediting, writing the session, recording an audit.
-  (b) **Repeats and partial failure.** For each sequence of writes or external calls, ask: what if the same request runs twice at once? What if it fails between steps? Flag any state left half-written, duplicated or orphaned, and any two writes in separate transactions that must succeed or fail together.
-  (c) **Failure the user sees.** For each failure return or caught error, trace it to what the user is shown. Flag a message that blames the wrong thing, a failure swallowed with nothing shown, and a retry that cannot succeed.
-  (d) **States the diff reads.** For each stored state or enum value the diff displays, counts or branches on, find every place that writes it, including code outside the diff and in other apps (grep the column or value). For the situation the UI or docs say the value stands for, confirm a writer actually leaves it in place, including after a rollback or a failure part-way. Flag a value that no path can produce in that situation, citing the writer's file:line.
-  (e) **Who can reach it.** For each write the diff adds, or moves to a different auth guard or helper, read that guard's body even when the diff doesn't touch it. List which identities could reach the write before the change and which can after. Flag any identity that is new. Then ask:
-    - Can the identity change between the page loading and the write? Cookies and local storage are shared by every tab, so another tab can sign in or start a session.
-    - Does an optional auth or ownership parameter skip its check when it is left out? A check that passes when the parameter is missing fails open.
-    Flag a write that stores data against a different user than the one who loaded the page.
-  (f) **Pages open across a deploy.** For each server function, endpoint or message whose input or result shape the diff changes but whose name or id stays the same, ask: what happens to a page or client built before the deploy? Flag a client that would crash on the new result shape. Also flag an input field whose meaning changes, because an old server drops fields it does not know and still reports success.
-  (g) **Widened sets.** When the diff extends a rule from one member to a whole set (every form, every role, every tenant), check every member of the set, not just the one the tests use. Also check that a member outside the set is still refused.
-  (h) **Go back and change.** For each field, card or control that a different answer shows or hides, walk through this: answer it, go back, change the answer that controls it so it is hidden, then come forward again. Flag any saved value or setting from the hidden control that still has an effect: it disables something, gets submitted, or fails validation.
-  (i) **Keys and conflicts.** For each migration and each insert or upsert the diff adds or changes, list the unique keys on that table after the migration, and what each conflict clause targets ('on conflict do nothing' with no target matches every unique key). Then try rows the new code legitimately writes twice under a kept old key: two items sharing a date or offset, a value edited onto another's, a new version or run returning to an earlier one's value. Flag any second row a kept key silently drops, any conflict target with no exactly matching unique index (a partial index needs the same WHERE clause), and any rows older code still writes during a deploy that lose their protection or start failing.
-  Each finding cites file:line and gives a concrete scenario ('two submits from one account: …'). A Behaviour finding is never a judgement call — the scenario is real or it isn't. Never label a finding 'edge case' or 'low risk' to soften it. When a finding means data saved against the wrong user, or access the user should not have, prove it: write a throwaway test that fails on the current code, run it, report the result, then delete it. Do not commit it. Existing tests are not evidence that a path is safe — they may encode the same bug. Under 500 words."
+- The full contents of [change-checklist.md](./change-checklist.md), pasted in. The sub-agent checks each item's **Review** line.
+- The plan's checklist answers for this subtask, if step 2 found a run file: the `## <KEY> plan` section, or the subtask's entry in the ticket plan.
+- The brief: "Check the diff against every item in the checklist. Each finding cites file:line and gives a concrete scenario ('two submits from one account: …'). When plan answers are given, label each finding either **breaks a planned answer** (the plan got it right, the code doesn't do it: a bug) or **plan answered wrongly or missed it** (the plan's answer is wrong or the item wasn't answered), naming the item letter. A Behaviour finding is never a judgement call — the scenario is real or it isn't. Never label a finding 'edge case' or 'low risk' to soften it. When a finding means data saved against the wrong user, or access the user should not have, prove it: write a throwaway test that fails on the current code, run it, report the result, then delete it. Do not commit it. Existing tests are not evidence that a path is safe — they may encode the same bug. Under 500 words."
 
 If the spec is missing, skip the Spec sub-agent and note this in the final report. Standards and Behaviour still run.
 
@@ -113,11 +103,29 @@ Skip this step if the repo has no `sonar-project.properties` file, or if `SONAR_
 
 A Sonar issue in code the diff touched is a hard violation. If a rule keeps coming up and local lint has a matching rule, say so. That rule belongs in the repo's lint config.
 
+### 4c. Check the file list
+
+Also while the sub-agents run, and only when step 2 found a plan. List the non-test files the diff changes (tests and fixtures don't count) and compare them with the plan's file list. Each file not on the list is a finding to explain: quote the one-line why the implementer gave (in the run file's `### Actual` section or the caller's report), or say none was given. Also list planned seam commits that aren't in the commit list.
+
 ### 5. Aggregate
 
-Present the reports under `## Standards`, `## Spec`, `## Behaviour` and `## Static analysis` headings, verbatim or lightly cleaned. If step 4b was skipped, the Static analysis section is one line saying why. Do **not** merge or rerank findings — the axes are deliberately separate (see _Why three axes_). Don't soften a Behaviour finding into an "edge case" while cleaning it up.
+Present the reports under `## Standards`, `## Spec`, `## Behaviour`, `## Plan` and `## Static analysis` headings, verbatim or lightly cleaned. The Plan section holds step 4c's results, or one line saying there was no plan. If step 4b was skipped, the Static analysis section is one line saying why. Do **not** merge or rerank findings — the axes are deliberately separate (see _Why three axes_). Don't soften a Behaviour finding into an "edge case" while cleaning it up.
 
 End with a one-line summary: total findings per axis, and the worst issue _within each axis_ (if any). Don't pick a single winner across axes — that's the reranking the separation exists to prevent.
+
+### 6. Record the findings
+
+Only when step 2 found a run file. Add a `### Review` section under the subtask's `## <KEY> plan` section ([run-format.md](../change-plan/run-format.md)):
+
+- `kind`: seam or behaviour, from the plan
+- `clean`: yes when there are no bugs and no wrong plan answers
+- Counts, each finding counted once:
+  - **bugs**: Spec missing or wrong findings, and Behaviour findings labelled "breaks a planned answer"
+  - **wrong plan answers**: Behaviour findings labelled "plan answered wrongly or missed it"
+  - **standards**: Standards and Static analysis findings
+- Each finding in one line, with what it should feed: the checklist (which item), a coding standard, or an automated check
+
+Then add this round's counts to the totals in the run file's frontmatter, unless the caller says the review is part of a fleet: then `/fleet-command` sums them (see run-format.md's parallel writers rule). A second round on the same subtask adds `### Review (round 2)` below the first; never overwrite a round. `clean` for the subtask comes from the first round.
 
 ## Why three axes
 
