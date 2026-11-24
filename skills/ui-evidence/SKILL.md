@@ -1,6 +1,6 @@
 ---
 name: ui-evidence
-description: Prove a finished UI change actually works by driving a browser against the user's localhost dev server — a private headless Chrome by default, or their real signed-in Chrome when the app sits behind a login you must not type past — capturing screenshots as evidence into .claude/ui/ (or .claude/pr/<slug>/ when called from pr-description), and combining them into one annotated PDF (captions plus numbered boxes on what changed) with a paste-ready markdown block for a PR description. Use this at the end of ANY implementation whose effect is visible in a browser page — a component, route, style, form, copy change, layout fix — even when the user never mentions screenshots or testing. Also use when the user says "dev test", "verify in the UI", "screenshot the change", "prove it works", or asks for evidence a change landed.
+description: Prove a finished UI change actually works by driving a browser against the user's localhost dev server — a private headless Chrome by default, or their real signed-in Chrome when the app sits behind a login you must not type past — capturing screenshots as evidence into .claude/ui/ (or .claude/pr/<slug>/ when called from pr-description), and combining them into one annotated PDF (captions plus numbered boxes on what changed) with a paste-ready markdown block for a PR description. Use this when a PR is opened for any change visible in a browser page (pr-description calls it, following the /change-plan shot list) — a component, route, style, form, copy change, layout fix — even when the user never mentions screenshots or testing; and for quick check shots while building. Also use when the user says "dev test", "verify in the UI", "screenshot the change", "prove it works", or asks for evidence a change landed.
 subagent-role: worker
 argument-hint: "optional output directory (defaults to .claude/ui/ in the repo; pr-description passes .claude/pr/<slug>/)"
 compatibility: claude-code
@@ -26,6 +26,10 @@ is. A teammate on Linux, or with the extension disconnected, should get one clea
 question, not a pile of failed capture attempts. Everything past capture — the PDF, the markdown block, the captions — is
 plain text with no tooling dependency at all.
  
+**Quick check mode.** When `/implement` uses this while building, to see whether a screen
+is right, take the shots on the headless path and look at them (Step 4's checks), then stop.
+No PDF, no markdown block: the PR's evidence is captured later, once.
+
 ## Step 1 — Decide whether there's anything to see
  
 Ask one question: **would this change alter what a page renders, or how it behaves
@@ -45,7 +49,12 @@ when a task looks visual, take the before shot as your first action, not your la
  
 ## Step 2 — Pick the pages and the states
  
-List the pages the change touches, then for each one the *states* that demonstrate it.
+**If the caller passed a shot list** (from the `/change-plan` plan, one line per shot: screen,
+state, and the acceptance criterion it proves), take exactly those shots, and use each line's
+criterion as the caption's claim. Add a shot only when one in the list can't show its criterion
+alone, and say why. On a rework, the caller names which shots to retake; keep the others.
+
+Without a list, list the pages the change touches, then for each one the *states* that demonstrate it.
 States are where the evidence lives: a hidden-until-valid button needs both the empty
 form and the filled one. One screenshot per claim in the acceptance criteria is a good
 rule of thumb.

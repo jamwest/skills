@@ -1,6 +1,6 @@
 ---
 name: pr-description
-description: Write a concise markdown PR description from the diff between the current branch and a base branch, so a reviewer gets full context in one skim. Detects a linked issue key from the branch name or commits and pulls its title, decides whether the change has a visible UI effect and if so invokes `ui-evidence` to fold in screenshots, then offers — but never assumes — to open or update the PR via the host CLI. Use when the user says "write a PR description", "describe this branch", "draft the PR", "what should the PR say", or is about to open a pull request.
+description: Write a concise markdown PR description from the diff between the current branch and a base branch, so a reviewer gets full context in one skim. Detects a linked issue key from the branch name or commits and pulls its title, decides whether the change has a visible UI effect and if so invokes `ui-evidence` to capture the shots the /change-plan plan lists (once, at PR time; on a rework only the screens whose files changed), then offers to open or update the PR via the host CLI — except a draft PR opened for /implement or /fleet-command, which it opens without asking. Use when the user says "write a PR description", "describe this branch", "draft the PR", "what should the PR say", or is about to open a pull request.
 subagent-role: worker
 argument-hint: "optional base branch (defaults to the base branch recorded in CONTRIBUTING.md)"
 ---
@@ -49,15 +49,28 @@ say no.
 
 - If yes: derive a slug for this PR — the issue key found in step 3 if there was one
   (e.g. `GROOV-2452`), otherwise the current branch name with any `/` replaced by `-`.
+  **Shot list.** If the run file `~/runs/<repo>/<ticket>.md` (see
+  [run-format.md](../change-plan/run-format.md)) lists shots for this subtask, pass that list to
+  `ui-evidence`: one shot per line, the screen and state, and the acceptance criterion it proves.
+  With no list, `ui-evidence` picks the states itself.
+
+  **Capture once.** Evidence is captured here, at PR time, not during the build. On a rework of a
+  branch that already has evidence, retake only the shots whose screens' files changed since the
+  last capture, and keep the rest. After each capture, write the commit it was taken at as
+  `capturedAt` in the evidence folder's `evidence.json` (build-pdf.mjs ignores the field). On a
+  rework, a shot needs retaking when `git diff --stat <capturedAt>` shows a file the screen
+  renders: its route, components, styles, copy or the data it shows. When unsure, retake.
+
   Invoke `ui-evidence` with that slug as its output-directory argument:
   `.claude/pr/<slug>/`. It writes screenshots there, and one annotated PDF to `~/Desktop/PR evidence/<slug>.pdf`, and
   returns a markdown block already shaped for a PR description — use that block as-is
   under an "Evidence" heading. Don't re-caption or re-summarize it.
-  If `/implement` already built `~/Desktop/PR evidence/<slug>.pdf` for this branch and no UI
-  file changed since, reuse its block instead of capturing again.
 - If `ui-evidence` can't run (no dev server, services down, a broken local database, a login
-  with no test account), **stop and tell the user before anything is pushed or opened**, so they
-  can start what's missing. Don't push first and note the gap in the PR afterwards. This holds
+  with no test account), **stop and tell the user before the PR is opened**, so they
+  can start what's missing. Don't open it first and note the gap afterwards. One exception: a
+  draft PR for `/implement` or `/fleet-command` still opens, with **Evidence blocked** and what is
+  missing at the top of the description. A draft notifies no one, and missing evidence blocks
+  marking it ready ([pr-lifecycle.md](./pr-lifecycle.md)). This holds
   when another skill or agent called you too: a brief that says to skip evidence doesn't
   override it. Never write "not checked in a browser" under Evidence; the only alternatives to
   shots are omitting the section (no UI change) or the user's own choice to skip, below.
@@ -84,7 +97,10 @@ option.
 
 ### 6. Present, then offer to push
 
-- Show the full draft as the deliverable.
+- **Called by `/implement` or `/fleet-command` for a draft PR**: open it as a draft with no
+  reviewers, without asking, per [pr-lifecycle.md](./pr-lifecycle.md), and return the link.
+  Updating that draft's description later doesn't need asking either. Marking it ready does.
+- **Otherwise**, show the full draft as the deliverable, then:
 - Ask whether the user wants it opened or applied via the host CLI, using the "open a
   pull request" convention in `docs/agents/code-host.md` and the commands in
   `.claude/agent-context/code-host.local.md` (e.g. `atlassian-cli bb pr create <repo> ... --description
