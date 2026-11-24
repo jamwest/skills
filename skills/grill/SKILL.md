@@ -90,6 +90,15 @@ See [adr-format.md](./adr-format.md) for when to offer an ADR (all three criteri
 - Don't accept vague answers. Push for specifics: names, numbers, timelines, owners, fallback plans.
 - Continue until every significant branch is resolved and you could hand a summary to a third party and have them understand the plan cold.
 
+## After the grill
+
+When the grill was about a ticket, write what was settled into the ticket text, using the edit
+command in `docs/agents/issue-tracker.md`: the what and the why, what done looks like, and the
+`CONTEXT.md` words for the things it names. Not file lists or how to build it: that's the plan.
+Show the new text and confirm before writing it.
+
+Then point at the next step: `/change-plan <ticket>`.
+
 ## Tone
 
 Rigorous but constructive. You're a trusted senior colleague who wants the plan to succeed — not an adversary hunting for gotchas. Be direct, be opinionated, push back when something doesn't add up.

@@ -34,6 +34,15 @@ bloated, or unwired?) and the places fixes land:
 - The repo's check commands: `package.json` scripts / Makefile / build-tool `lint`/`check`/`test`
   targets, pre-commit config, CI workflows (`.github/workflows/`, etc.)
 
+Then read the run store, `~/runs/` (format: `change-plan`'s
+[run-format.md](../change-plan/run-format.md)):
+
+- The session's run file and questions file, if it worked on a ticket: planned vs actual files,
+  plan answers that were wrong, review findings and what each should feed.
+- The frontmatter of every run file across `~/runs/*/`: finding counts per ticket. A checklist item
+  that keeps being answered wrongly, or a kind of bug that keeps coming back across tickets and
+  repos, is a stronger candidate than one session's friction.
+
 ### 2. Load the session
 
 Resolve which session to review:
@@ -64,6 +73,10 @@ happened (a quote, a tool call, a turn). Signals worth looking for:
   information it couldn't reach
 - A skill step that was skipped, misread, contradicted another instruction, or pushed the work
   somewhere it shouldn't have gone (e.g. `/implement` changing files the task didn't need)
+- A review finding the plan should have caught: a wrong plan answer, an off-list file, a sibling
+  path the plan missed
+- A human reviewer finding what `/review` missed. Record it in the run file as `Human reviewer
+  miss:` under that subtask's `### Review`, which puts that subtask kind back to always reviewed
 
 Anything you can't point back to a specific moment is not a finding. Drop it.
 
@@ -81,6 +94,7 @@ Assign each finding the one category whose fix addresses its cause:
 | **Tool economy** | An expensive call for what it returned; token-heavy custom tooling | Streamline or replace the tool, or point the agent at a cheaper path |
 | **Information access** | Crucial information the agent couldn't reach | Widen access: tee dev-server logs to a file, read-only credentials for a service, a script that dumps state |
 | **Skill friction** | A skill from this repo misled, was ambiguous, was skipped, or let the work sprawl | An edit to that skill's `SKILL.md` or bundled file in `jamwest/skills` |
+| **Plan miss** | A review finding (or a human reviewer's) that the plan answered wrongly or never asked | A sharper **Plan** line, or a new item, in `review/change-checklist.md` in `jamwest/skills`. If the miss is mechanical, an Automated check instead |
 
 **Where fixes go.** The implementing agent carries the most context pressure: it explores, writes
 code, and debugs. The reviewing agent gets a diff and little else. So standards belong to review
