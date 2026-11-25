@@ -2,6 +2,7 @@
 name: ui-evidence
 description: Prove a finished UI change actually works by driving a browser against the user's localhost dev server — a private headless Chrome by default, or their real signed-in Chrome when the app sits behind a login you must not type past — capturing screenshots as evidence into .claude/ui/ (or .claude/pr/<slug>/ when called from pr-description), and combining them into one annotated PDF (captions plus numbered boxes on what changed) with a paste-ready markdown block for a PR description. Use this when a PR is opened for any change visible in a browser page (pr-description calls it, following the /change-plan shot list) — a component, route, style, form, copy change, layout fix — even when the user never mentions screenshots or testing; and for quick check shots while building. Also use when the user says "dev test", "verify in the UI", "screenshot the change", "prove it works", or asks for evidence a change landed.
 subagent-role: worker
+model: sonnet
 argument-hint: "optional output directory (defaults to .claude/ui/ in the repo; pr-description passes .claude/pr/<slug>/)"
 compatibility: claude-code
 ---

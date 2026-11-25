@@ -2,6 +2,7 @@
 name: tidy-branch
 description: Analyze a branch's commit history vs main/equivalent, propose a cleaner logical commit structure (optionally split into PR chains), iterate on the plan conversationally, then execute via non-interactive rebase. Use when the user says "tidy my branch", "clean up my commits", "reorganize my history", "reshape this branch", or "rewrite my commit history".
 subagent-role: interactive
+model: sonnet
 argument-hint: "optional hints for grouping strategy (e.g. 'keep migrations separate', 'group by feature area')"
 ---
 

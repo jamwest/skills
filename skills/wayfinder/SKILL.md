@@ -2,6 +2,7 @@
 name: wayfinder
 description: Plan a huge chunk of work — more than one agent session can hold — as a shared map of decision tickets on the issue tracker, and resolve them one at a time until the way to the destination is clear. Use when an idea is too big and too foggy for one /grill session — a greenfield project, a build spanning many sessions, or an effort on a legacy codebase where "what's already true here" is as unclear as "what should we do."
 subagent-role: interactive
+model: opus
 disable-model-invocation: true
 argument-hint: "a loose idea (to chart a new map), or a map's issue number/URL (to work through an existing one)"
 ---
@@ -57,7 +58,7 @@ User invokes with a loose idea, no existing map.
    in a **second pass** — issues need ids before they can reference each other. Everything you
    can't yet specify stays in the fog.
 5. **Fire the research tickets.** For each `research` ticket just created, spin up an Agent-tool
-   subagent (`general-purpose`) to resolve it in parallel — see [map-format.md](./map-format.md)'s
+   subagent (`general-purpose`, `model: sonnet`) to resolve it in parallel — see [map-format.md](./map-format.md)'s
    Ticket Types table for the brief shape. Capture findings on a throwaway `research/<name>`
    branch with a context pointer from the ticket.
 6. Stop. Charting is one session's work; it hand-resolves nothing.

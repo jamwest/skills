@@ -2,6 +2,7 @@
 name: pr-description
 description: Write a concise markdown PR description from the diff between the current branch and a base branch, so a reviewer gets full context in one skim. Detects a linked issue key from the branch name or commits and pulls its title, decides whether the change has a visible UI effect and if so invokes `ui-evidence` to capture the shots the /change-plan plan lists (once, at PR time; on a rework only the screens whose files changed), then offers to open or update the PR via the host CLI — except a draft PR opened for /implement or /fleet-command, which it opens without asking. Use when the user says "write a PR description", "describe this branch", "draft the PR", "what should the PR say", or is about to open a pull request.
 subagent-role: worker
+model: sonnet
 argument-hint: "optional base branch (defaults to the base branch recorded in CONTRIBUTING.md)"
 ---
 

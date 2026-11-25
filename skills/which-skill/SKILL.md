@@ -2,6 +2,7 @@
 name: which-skill
 description: Ask which skill or flow fits your situation. A hand-maintained router over the skills in this repo — names the skill or sequence to reach for, and stops. Invoke explicitly with /which-skill; it doesn't fire on its own.
 subagent-role: scout
+model: haiku
 disable-model-invocation: true
 argument-hint: "freetext description of your situation (e.g. 'two skills seem to overlap', 'I have a bug I can't figure out')"
 ---

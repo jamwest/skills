@@ -2,6 +2,7 @@
 name: change-plan
 description: Plan a change before any code is written. Reads the code the whole ticket touches, including sibling paths (every sender, every close path, every screen that shows the thing), finds shared seams, and splits the work into seam subtasks first and behaviour subtasks after, each with its list of non-test files. Answers the shared change checklist for each subtask and settles product calls through a questions file, showing what the patient or practitioner sees under each option. Two sizes - ticket size (after /grill; the user approves the split, then subtasks are created in the tracker) and subtask size (/implement runs it as its first step, no approval). Writes the plan to ~/runs/<repo>/<ticket>.md. Use when the user says "plan this change", "change plan", "split this ticket", "break this down", "how should we do this ticket", or has just grilled a ticket and wants to start.
 subagent-role: interactive
+model: opus
 argument-hint: "ticket key (e.g. PROJ-123) for ticket size; /implement passes a subtask key for subtask size"
 ---
 
@@ -83,8 +84,9 @@ agree on timing, but each works it out alone. A new close path that the invite-w
 doesn't get. Audit rows written with the wrong accessor type on one path. A review screen that
 uses labels for ongoing actions on one-time actions.
 
-On a wide ticket, run up to three Explore subagents in parallel, one per area, each given the
-ticket text and the names to trace. Merge their lists yourself.
+On a wide ticket, run up to three Explore subagents in parallel (`model: haiku`), one per area,
+each given the ticket text and the names to trace. They only locate code; merge their lists
+yourself.
 
 ### T3. Find the seams
 

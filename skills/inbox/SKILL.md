@@ -2,6 +2,7 @@
 name: inbox
 description: Summarise what's waiting on the user right now — Claude sessions blocked on input, PRs to review or re-review, their own PRs with changes requested or approved, and assigned Jira issues — from the command-center state files. Use when the user says "/inbox", "what's pending", "what needs me", "anything to review?", or when an agent needs to know the user's review queue before suggesting what to do next. Read-only; to actually review a PR use /pr-review.
 subagent-role: scout
+model: haiku
 argument-hint: "optional filter: prs | sessions | jira"
 ---
 

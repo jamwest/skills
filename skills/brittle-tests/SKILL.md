@@ -2,6 +2,7 @@
 name: brittle-tests
 description: Scan test files — from a diff, the whole suite, or a given path/glob — for brittle-test anti-patterns (testing implementation instead of behavior, fragile UI locators, fixed sleeps/waits, hardcoded test data) and blind tests that stay green when the code they cover is removed, and report findings with file:line, why it's brittle, and a suggested fix, ranked by confidence. Use when the user wants to audit test quality/reliability, mentions tests breaking on unrelated refactors, or asks to check for brittle or flaky-adjacent tests.
 subagent-role: reviewer
+model: sonnet
 argument-hint: "fixed point to diff against (default), 'all' to scan the whole test suite, or a file/glob to target specific tests"
 ---
 

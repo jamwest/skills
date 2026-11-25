@@ -2,6 +2,7 @@
 name: fleet-command
 description: Run a parent ticket's approved /change-plan across several agents at once. Reads the split (seam subtasks first, then behaviour subtasks, with what each depends on) from ~/runs/<repo>/<ticket>.md, then dispatches one /implement subagent per subtask into its own git worktree, each branched from the work it depends on. Each agent plans its subtask against current code, builds it, reviews it once against the plan, and pushes a draft PR. Tears down worktrees, runs a duplication check of the fleet's output against the plan, and reports planned vs actual. Use when the user wants to execute a multi-subtask ticket across several agents at once, says "run the fleet on X", "work these subtasks in parallel", or has just approved a /change-plan split.
 subagent-role: orchestrator
+model: opus
 compatibility: claude-code
 argument-hint: "parent ticket key or path (e.g. PROJ-123, GH-42, .claude/scratch/<slug>/) with an approved /change-plan"
 ---
@@ -125,8 +126,15 @@ For each subtask in the current layer, up to the concurrency cap at a time:
    this, a monorepo's workspace imports resolve up to the main working copy's dependency
    folder and from there to the main copy's packages, so typecheck and tests pass against the
    base branch's code, not the subtask's. Every check the agent reports is then worthless.
-2. Spawn one Agent-tool subagent (background), briefed explicitly since none of this is otherwise
-   discoverable to it:
+2. Spawn one Agent-tool subagent (background), with `model` chosen per subtask from the plan:
+   - `opus` when the subtask is a seam subtask, its file list spans more than one package or
+     layer, or its checklist answers involve concurrency, auth/access, money, data migration,
+     or audit
+   - `sonnet` otherwise — the plan has already made the design calls, so the agent is
+     executing them
+
+   Record the choice and the reason in the final report's per-subtask line. Brief it explicitly,
+   since none of this is otherwise discoverable to it:
    - The absolute worktree path to work in (it must `cd` there — this is a separate working tree,
      not the main one)
    - The subtask's key. For a local-markdown tracker, the **absolute path to the issue file in the
@@ -237,7 +245,7 @@ running keep going regardless of the answer — only *dispatching new work* paus
 ### 7. Check for duplication
 
 The plan put shared code into seam subtasks before any agent started. Check that it held. Once
-every subtask has finished, spawn one fresh subagent over the combined diff (the top of the stack,
+every subtask has finished, spawn one fresh subagent (`model: sonnet`) over the combined diff (the top of the stack,
 or a local merge of every subtask branch built as in *Merging a base*), with the run file's Seams
 section. Ask it to report:
 
@@ -254,9 +262,9 @@ user asks.
 ### 8. Final report
 
 ```
-✓ PROJ-124  Share one retry schedule (seam)  → feat/proj-123-payment-retry--share-retry-schedule  PR #41 (draft)
-✓ PROJ-126  Dead-letter queue infra         → feat/proj-123-payment-retry--dlq-infra             PR #42 (draft)
-✓ PROJ-125  Retry button + error state      → feat/proj-123-payment-retry--retry-button          PR #43 (draft)
+✓ PROJ-124  Share one retry schedule (seam)  → feat/proj-123-payment-retry--share-retry-schedule  PR #41 (draft)  opus: seam
+✓ PROJ-126  Dead-letter queue infra         → feat/proj-123-payment-retry--dlq-infra             PR #42 (draft)  opus: 2 packages
+✓ PROJ-125  Retry button + error state      → feat/proj-123-payment-retry--retry-button          PR #43 (draft)  sonnet
 
 Draft PRs open, no reviewers. Plan: 18 non-test files; actual: 20 (2 off-list, each noted).
 ```

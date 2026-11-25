@@ -1,6 +1,7 @@
 ---
 name: skill-forge
 description: Create a new skill for this skills repo. Grills the user to understand what the skill needs to do, checks for overlap with existing skills, then writes a SKILL.md (and dependent files if needed) that follows the repo's conventions — explicit enough for a local LLM, subagent-role aware, and wired to CONTEXT.md and docs/agents/ where relevant. Use when the user says "create a skill", "add a skill", "forge a skill", or describes a repeatable workflow they want to codify.
+model: opus
 ---
 
 # Skill Forge
@@ -135,6 +136,7 @@ Let them edit before writing. Then write all files in one pass.
 name: skill-name           # short, memorable, verb-friendly (e.g. grill, forge, review)
 description: ...           # specific enough for an agent to pick over neighbouring skills
 subagent-role: ...         # orchestrator | scout | researcher | worker | reviewer | interactive
+model: ...                 # haiku (mechanical: fill a format from a diff/state) | sonnet (well-defined work) | opus (deep reasoning, design, subtle bugs). Omit only when the caller should pick (e.g. implement, chosen per subtask by fleet-command)
 argument-hint: "..."       # only if the skill accepts a freetext argument (optional)
 disable-model-invocation: true  # almost never: hides the skill from the agent and other skills
 ---

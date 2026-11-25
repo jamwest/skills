@@ -3,6 +3,7 @@ name: setup-agent-context
 description: Sets up an `## Agent skills` block in AGENTS.md/CLAUDE.md, `docs/agents/`, and `CONTRIBUTING.md` so skills know this repo's issue tracker (GitHub, Jira, or local markdown), code host (GitHub, Bitbucket, GitLab, etc.), workflow conventions (branch naming, commit format, merge strategy, PR title format), coding standards (style, lint, architectural patterns), and domain doc layout. Run before first use of `change-plan`, `implement`, `deepen`, `wayfinder`, or `fleet-command` — or if those skills appear to be missing context about the issue tracker, code host, or domain docs.
 disable-model-invocation: true
 subagent-role: interactive
+model: sonnet
 ---
 
 # Setup Agent Docs

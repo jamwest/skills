@@ -49,5 +49,5 @@ jq -r 'select(.type=="user") | .message.content[]? | select(.type=="tool_result"
 If the schema doesn't match (fields renamed in a newer version), inspect one line with
 `head -c 2000 <file>` and adapt the filters. Don't fall back to reading the whole file.
 
-For a large session, delegate the read to a subagent. Have it return only the friction moments
+For a large session, delegate the read to a subagent (`model: sonnet`). Have it return only the friction moments
 from step 3, each with its quote or tool call, not the transcript.

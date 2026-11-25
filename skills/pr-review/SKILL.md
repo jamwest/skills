@@ -2,6 +2,7 @@
 name: pr-review
 description: Review someone else's open pull request on the code host. Treat the user's stated concerns as claims to check against the code. Check reuse of shared packages, naming against the domain glossary, and duplication the PR puts off. Give make it work / make it right / make it fast verdicts. Draft Conventional Comments anchored to file and line, then post them only after the user approves. Use when the user says "review PR 123", "do a review on this PR", or names a PR with concerns to check. Not for your own branch before you push — that is /review.
 subagent-role: reviewer
+model: opus
 argument-hint: "PR id or URL, then optional concerns as free text (e.g. '660 naming of form-cards; raw html vs @hcp/ui')"
 ---
 

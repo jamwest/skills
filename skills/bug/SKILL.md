@@ -2,6 +2,7 @@
 name: bug
 description: Diagnosis loop for hard bugs and performance regressions — build a tight red/green feedback loop, minimise the repro, rank falsifiable hypotheses, instrument, fix with a regression test. Use when the user says "diagnose"/"debug this", or reports something broken/throwing/failing/slow and a first look hasn't found the cause.
 subagent-role: worker
+model: opus
 ---
 
 # Bug

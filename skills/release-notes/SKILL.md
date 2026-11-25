@@ -2,6 +2,7 @@
 name: release-notes
 description: Generate high-level, Slack-postable release notes summarizing the changes between two branches (typically development -> main) for a non-technical audience (CEO, demoers). Splits what is live for everyone from work still behind a feature flag or not yet set up, so unreleased features still show progress. Use when the user asks for release notes, a "what's new" summary, or wants to announce a deploy in Slack.
 subagent-role: scout
+model: sonnet
 argument-hint: "optional branch range and/or release status override (e.g. 'staging..main', 'status: Live')"
 ---
 

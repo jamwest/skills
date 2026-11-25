@@ -2,6 +2,7 @@
 name: review
 description: Review the diff between HEAD and a fixed point (commit, branch, tag, or merge-base) along three axes — Standards (does the code follow this repo's documented coding standards?), Spec (does the code match what the originating issue asked for?), and Behaviour (is it correct on the paths the spec doesn't list — sibling branches, concurrent repeats, partial failure, the error the user sees, who can reach each write, pages open across a deploy, rollback, audit, every caller and screen?). When a /change-plan plan exists, checks the code against the plan's checklist answers and file list, and records the findings in the plan's run file. Runs each axis as a parallel sub-agent so none sees another's reasoning, then reports them side by side without merging or reranking. Use when the user wants to review a branch, a PR, work-in-progress changes, or asks to "review since X".
 subagent-role: reviewer
+model: opus
 argument-hint: "fixed point to diff against (commit, branch, tag, or merge-base), and optionally a spec path"
 ---
 
@@ -63,7 +64,7 @@ Each smell reads _what it is_ → _how to fix_; match it against the diff:
 
 ### 4. Spawn the sub-agents in parallel
 
-Send a single message with three `Agent` tool calls (two if the Spec sub-agent is skipped), `subagent_type: general-purpose` for each.
+Send a single message with three `Agent` tool calls (two if the Spec sub-agent is skipped), `subagent_type: general-purpose` for each. Set `model` per axis: `sonnet` for Standards and Spec (matching the diff against written rules or a written spec), `opus` for Behaviour (tracing paths nobody wrote down is where the hard reasoning is).
 
 Every prompt must end with: _"Do not invoke `/review` or spawn additional agents — perform this review directly."_ Without this line, a sub-agent can rediscover this skill mid-review and fan out again.
 

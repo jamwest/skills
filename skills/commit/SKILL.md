@@ -2,6 +2,7 @@
 name: commit
 description: Analyze staged git changes, write a Conventional Commits message, and assess whether the changes should be split into smaller commits for good hygiene. Reads CONTRIBUTING.md for this repo's actual commit format when present, falling back to a sane default otherwise. Use when the user wants to commit, asks for a commit message, says "commit this", or has staged changes ready to review.
 subagent-role: scout
+model: haiku
 ---
 
 # Commit

@@ -228,7 +228,8 @@ Once the diff-scope check is done and the full suite passes, spawn two fresh Age
 subagents **in parallel** (single message, two tool calls): one runs `/review`'s process, the other
 runs `/brittle-tests`'s process, both against the work so far. Independence is the point — don't just
 follow either skill's steps inline in this same session, which holds every assumption that shaped
-the code.
+the code. Don't pass `model` on the `/review` subagent — `/review` sets its own per-axis models.
+Spawn the `/brittle-tests` subagent with `model: sonnet`.
 
 Brief the `/review` subagent explicitly, since none of this is otherwise discoverable:
 

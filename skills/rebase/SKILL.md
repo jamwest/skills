@@ -2,6 +2,7 @@
 name: rebase
 description: Rebase the current branch onto its base branch, resolving each conflict as it surfaces by tracing both sides back to their primary source (commit message, PR, issue) rather than picking `--ours`/`--theirs` blind. Runs the repo's checks before finishing, never aborts. Use when the user says "rebase this", "rebase onto main", "catch this branch up", or the branch has drifted behind its base and needs the latest changes merged in.
 subagent-role: worker
+model: sonnet
 argument-hint: "optional base branch override (defaults to CONTRIBUTING.md's Base branch, or auto-detected)"
 ---
 

@@ -2,6 +2,7 @@
 name: deepen
 description: Scan a codebase for deepening opportunities — shallow modules, leaky seams, tangled boundaries — rank them, and hand the strongest candidate off to /grill or /wayfinder. Output is concise markdown, not an HTML report — a couple of full-detail "do this now, easy win" entries with a before/after and cost estimate, larger opportunities named but left thin until asked for. Use when the user wants an architecture review, asks "where's the tech debt", "what should we refactor", or has a spare moment to improve codebase health.
 subagent-role: scout
+model: opus
 argument-hint: "optional direction to scope the scan (a module, subsystem, or pain point) — otherwise inferred from recent commit hot spots"
 ---
 
@@ -42,7 +43,8 @@ easier, so weight the parts of the codebase that have recently changed:
 
 Read `CONTEXT.md` and any ADRs in the area you're touching first.
 
-Use the Agent tool with `subagent_type: Explore` to walk the scoped area. Don't follow rigid
+Use the Agent tool with `subagent_type: Explore` and `model: sonnet` to walk the scoped area
+(judging friction needs more than Haiku; the ranking stays with you). Don't follow rigid
 heuristics — explore organically and note friction:
 
 - Where does understanding one concept require bouncing between many small modules?

@@ -2,6 +2,7 @@
 name: handoff
 description: Compact the current conversation into a handoff document for another agent to pick up, or fork it into a live background agent if you're staying in this session. Writes a portable markdown file to the OS temp dir by default; forks via a `claude --bg` background agent when the situation is "keep working now, same harness and directory" (falls back to the file if that CLI isn't available). Use when the user says "hand this off", "compact this for later", "fork this into the background", or is about to swap harness, swap directory, or hand the thread to a colleague.
 subagent-role: worker
+model: sonnet
 argument-hint: "what the next session is for, and whether it's a fork (keep working now, same harness/directory) or a move (new harness, new directory, or a colleague)"
 ---
 
