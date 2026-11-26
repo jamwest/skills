@@ -36,7 +36,7 @@ Look for the originating spec, in this order:
 2. A path the user passed as an argument.
 3. If nothing is found, ask the user where the spec is. If they say there isn't one, the **Spec** sub-agent is skipped and the report says so — never infer requirements from the code.
 
-Then look for the **plan**: the run file `/change-plan` wrote, at `~/runs/<repo>/<ticket>.md` (see [run-format.md](../change-plan/run-format.md) for `<repo>` and `<ticket>`), where `<ticket>` is the issue's parent, or the issue itself when it has none. Take this subtask's `## <KEY> plan` section, or its entry in the ticket plan if there's no subtask section. No run file means no plan checks: say so in the report and carry on.
+Then look for the **plan**: the run file `/change-plan` wrote, at `~/runs/<repo>/<ticket>.md` (see [run-format.md](../change-plan/run-format.md) for `<repo>` and `<ticket>`), where `<ticket>` is the issue's parent, or the issue itself when it has none. Take this subtask's `## <KEY> plan` section (from the section file when the caller named one), or its entry in the ticket plan if there's no subtask section. No run file means no plan checks: say so in the report and carry on.
 
 ### 3. Identify the standards sources
 
@@ -125,7 +125,7 @@ Only when step 2 found a run file. Add a `### Review` section under the subtask'
   - **standards**: Standards and Static analysis findings
 - Each finding in one line, with what it should feed: the checklist (which item), a coding standard, or an automated check
 
-Then add this round's counts to the totals in the run file's frontmatter, unless the caller says the review is part of a fleet: then `/fleet-command` sums them (see run-format.md's parallel writers rule). A second round on the same subtask adds `### Review (round 2)` below the first; never overwrite a round.
+When the caller named a section file (a fleet run, see run-format.md), write the `### Review` section there instead and skip the totals: the fleet recomputes them. Otherwise, recompute the totals in the run file's frontmatter: re-read the file and set each total to the sum of that count over every `### Review` section in it, this round included. Never add to the old total. Another agent may be reviewing a sibling subtask into the same file, and a sum stays right however many write it (see run-format.md's parallel writers rule). A second round on the same subtask adds `### Review (round 2)` below the first; never overwrite a round.
 
 ## Why three axes
 

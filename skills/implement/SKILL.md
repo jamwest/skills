@@ -30,7 +30,9 @@ Check whether these exist at the repo root, and read whichever are present:
 - Also note the current `git rev-parse HEAD` before making any changes — call it `<start-sha>`.
   Steps 5, 7 and 8 diff against this point.
 - Once step 2 knows the task: the run file and questions file for its ticket, `~/runs/<repo>/<ticket>.md` and
-  `<ticket>.questions.md` (see [run-format.md](../change-plan/run-format.md) for the names). An
+  `<ticket>.questions.md` (see [run-format.md](../change-plan/run-format.md) for the names). When
+  the caller (such as `/fleet-command`) names a section file, write `## <KEY> plan`, `### Actual`
+  and every other section for this subtask there, and only read the run file. An
   answered question is settled. Before asking the user anything, follow the questions-file rules
   in [questions-format.md](../change-plan/questions-format.md).
 - `docs/agents/domain.md` — confirms whether `CONTEXT.md` is single or multi-context
@@ -220,7 +222,9 @@ list, when there's no ticket plan):
 
 Write the run file's `### Actual` section under `## <KEY> plan`
 ([run-format.md](../change-plan/run-format.md)): planned vs actual non-test files, each off-list
-file with its why.
+file with its why. When `/implement` runs alone (no section file from a caller), also keep the run
+file's `## Open` section current, here and after the PR opens: what waits on the user, holds, and
+the next step.
 
 ### 8. Review once, against the plan
 
@@ -241,7 +245,8 @@ Brief the `/review` subagent explicitly, since none of this is otherwise discove
   step 2. Skip review's own spec-source discovery entirely — the spec is already known. Tell the
   Spec sub-agent to review against the issue text and report every difference, including ones an
   override explains. Those are labelled "override, issue needs updating", not dropped.
-- **Plan**: the run file path and the `## <KEY> plan` section, so the Behaviour axis checks the
+- **Plan**: the run file path and the `## <KEY> plan` section (in a fleet, the section file the
+  caller named, which is also where `/review` writes its findings), so the Behaviour axis checks the
   code against the plan's checklist answers, step 4c checks the file list, and step 6 records the
   findings in the run file.
 

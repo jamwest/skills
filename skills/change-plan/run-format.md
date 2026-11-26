@@ -10,16 +10,34 @@ never committed. Several skills write to it, each to its own section:
 | `### Actual` under it | `/implement`'s report |
 | `### Review` under it | `/review` |
 | `## Fleet check` | `/fleet-command`'s duplication check |
+| `## Open` | Whoever runs the session: `/fleet-command`'s coordinator, or `/implement` when it runs alone |
+
+**`## Open`** is the short list of what is still live: what's pending, what waits on the user, holds
+and their reason, standing rules the user gave in the conversation (e.g. "hold 3508/3509 until
+3505/3506 ship"), and the next step. Rewrite it in place at each milestone (dispatch, an agent
+done, a user decision, PR ready, merge); it is the current state, not a log. Keep it under about
+15 lines. A SessionStart hook prints it after every compaction, so anything the session can't
+afford to lose belongs here, not only in the conversation. Never written by fleet agents (they
+have section files); only the session that talks to the user writes it.
 
 `<repo>` is the last part of the `origin` remote URL without `.git` (`groov.hcp-portal`). A
 worktree's folder name is not the repo name. `<ticket>` is the parent ticket key: given a subtask
 key, fetch the subtask and use its parent's key. A single small change with no parent uses its own
 key. With no key at all, use a short slug of the task title.
 
-**Parallel writers.** In a fleet, several agents write to the same file at once. Each agent edits
-only its own `## <KEY> plan` section, with a targeted edit, never a rewrite of the whole file. Only
-`/fleet-command` updates the frontmatter totals, summing the `### Review` sections once every agent
-is done. Outside a fleet, `/review` updates them.
+**Parallel writers.** Agents editing one file at once break each other's edits: an edit fails when
+the file changed after it was read. So in a fleet, each agent writes to its own **section file**,
+`~/runs/<repo>/<ticket>.<KEY>.md`, named by `/fleet-command` in its brief. The section file holds
+`## <KEY> plan` and everything under it (`### Actual`, `### Review`). The agent reads the run file
+but never writes it. When the agent finishes, `/fleet-command` appends the section file to the run
+file and deletes it. When `/implement` runs are started side by side by hand, without
+`/fleet-command`, each edits only its own `## <KEY> plan` section, with a targeted edit, never a
+rewrite of the whole file.
+
+The frontmatter totals are always a sum over every `### Review` section, never a running count.
+`/review` recomputes them after each round when it writes to the run file. When it writes to a
+section file, it skips that, and `/fleet-command` recomputes them once every section file is
+folded in.
 
 The file is Obsidian-friendly: YAML frontmatter, and `[[ticket]]` links to other run files.
 `/retro` reads the frontmatter across `~/runs`.

@@ -98,8 +98,12 @@ segment). Never name a subtask branch as a path under the integration branch
 `feat/<ticket-slug>` and a branch `feat/<ticket-slug>/<subtask-slug>` cannot coexist; git refuses
 to create the second because the first occupies that path as a file, not a directory.
 
-**Worktree location:** `.worktrees/<subtask-branch>/` at the repo root. Add `.worktrees/` to
-`.gitignore` if it isn't already ignored.
+**Worktree location:** `.worktrees/<subtask-branch>/` at the root of the working copy this session
+runs in (`git rev-parse --show-toplevel`). In a session isolated to its own worktree (Claude Code's
+worktree guard), that is the session's worktree, not the main checkout. The guard allows Edit,
+Write, `cd` and git in worktrees nested inside the session's worktree, and refuses them anywhere
+else. So nesting lets the agents and you work there with the normal tools, no `/tmp` scripts. Check
+`.worktrees/` is ignored (`git check-ignore .worktrees/x`) and add it to `.gitignore` if not.
 
 For each subtask in the current layer, up to the concurrency cap at a time:
 
@@ -111,7 +115,7 @@ For each subtask in the current layer, up to the concurrency cap at a time:
      it (see *Merging a base* below).
 
    `git worktree add -b feat/<ticket-slug>--<subtask-slug> .worktrees/<branch> <base>` from the
-   main working copy. Branch from the integration branch alone and a dependent subtask starts
+   session's working copy. Branch from the integration branch alone and a dependent subtask starts
    without the code it depends on.
 
    Then copy every gitignored env file (`.env`, `.env.local`, `.env.<name>`, but not
@@ -150,20 +154,18 @@ For each subtask in the current layer, up to the concurrency cap at a time:
      from the environment. Parallel worktrees on the same hard-coded port test each other's servers.
      If ports are hard-coded, say so in the brief and have the agent wait for a free port
    - That its env files are already copied in, so it can run servers and integration tests
-   - How to make changes safely when its worktree is nested inside a session that is isolated
-     to its own worktree (Claude Code's worktree guard refuses shell commands it can't verify):
-     change files with the Edit and Write tools, never with shell heredocs, `sed -i` or
-     `cat >>`, because the tools fail loudly and a refused shell edit can be lost without a
-     sign. Run one git command per call, without `&&` chains or `git -C`. For anything else
-     the guard refuses, write the script to `/tmp` and run it as one command. `cd` does not
-     carry between shell calls, so give the agent a ready-made wrapper: copy
-     [wt-git.sh](./wt-git.sh) to `/tmp` and tell it to run every git command as
-     `sh /tmp/wt-git.sh <worktree> <git args>`. Agents that improvise one have run a
-     cherry-pick in the parent checkout by mistake
-   - The run file and questions file paths (absolute, in the home directory, shared by every
-     agent). `/implement` writes its `## <KEY> plan`, `### Actual` and review sections there, and
-     checks the questions file before asking anything. Say it runs in a fleet, so it
-     edits only its own section and its `/review` leaves the frontmatter totals alone
+   - That it changes files with the Edit and Write tools, never with shell heredocs, `sed -i`
+     or `cat >>`: the tools fail loudly, and a refused shell edit can be lost without a sign.
+     `cd` does not carry between shell calls, so each git call starts with `cd <worktree> &&`
+     or uses `git -C <worktree>`. Agents that skip this have run a cherry-pick in the parent
+     checkout by mistake. If the guard still refuses a command (the worktree isn't nested in
+     the session's worktree), fall back to [wt-git.sh](./wt-git.sh):
+     `sh <skill-dir>/wt-git.sh <worktree> <git args>`
+   - The run file and questions file paths (absolute, in the home directory), to read. The run
+     file is shared, so it doesn't write it: give it its own **section file**,
+     `~/runs/<repo>/<ticket>.<KEY>.md` ([run-format.md](../change-plan/run-format.md)), for its
+     `## <KEY> plan`, `### Actual` and review sections. It checks the questions file before
+     asking anything
    - The branch name and the PR base (its blocker's branch, or the merge target from step 4), for
      `/implement`'s draft PR
    - **Evidence is part of the PR.** `/implement` opens the draft PR through `/pr-description`,
@@ -188,6 +190,12 @@ When an agent reports done:
 - Confirm a commit landed on its branch (`git log` in the worktree) and the draft PR exists. If
   nothing committed, treat it as a failure (see below). If it stopped for a re-plan or a question,
   hold it and its dependents, and bring the question to the user.
+- Append its section file to the end of the run file, then delete the section file. Only you
+  write the run file, so these appends never race.
+- Update the run file's `## Open` section ([run-format.md](../change-plan/run-format.md)): what's
+  still running, held, or waiting on the user. Do the same after every user decision and every
+  PR state change, and record any standing rule the user gives (a merge hold, an order) there the
+  moment they give it. After a compaction, that section is what brings it back.
 - `git worktree remove .worktrees/<branch>`. The branch persists in the repo; only the working
   tree goes away.
 - If its report has **Known defects**, copy them word for word into every progress update you
@@ -196,7 +204,8 @@ When an agent reports done:
 
 **Rework after a user decision.** When a decision changes a finished subtask (a redesign, a dropped
 requirement, a new state), dispatch it again as `/implement <subtask-key>` in a worktree on that
-subtask's branch. Pass the decisions as the overrides list for `/implement` step 2. Don't send a
+subtask's branch. Pass the decisions as the overrides list for `/implement` step 2, and a fresh section file
+(folded in as above when it's done). Don't send a
 free-form "make these changes" prompt: it skips step 8, so the reworked code ships with less review
 than the first version. The rework gets one review round, and a second only if the first found a
 bug or a wrong plan answer. `/pr-description` retakes only the shots whose screens' files changed. A fork can't spawn the review subagents. If you use one, run `/review` and
@@ -256,7 +265,7 @@ section. Ask it to report:
 
 This is a check, not a refactor pass. Each real duplication goes in the final report, and into the
 run file's `## Fleet check` section ([run-format.md](../change-plan/run-format.md)), so the next
-plan catches it. Then sum every subtask's `### Review` counts into the run file's frontmatter. Fixing one is a rework of the subtask that caused it (see *Rework*), and only when the
+plan catches it. Then recompute the run file's frontmatter totals as the sum of every subtask's `### Review` counts, now that every section file is folded in. Fixing one is a rework of the subtask that caused it (see *Rework*), and only when the
 user asks.
 
 ### 8. Final report
@@ -282,6 +291,11 @@ Then, for the user to review rather than answer:
 
 - **Plan vs actual** per subtask: planned and actual non-test files, off-list files with their
   why, plan answers that were wrong, and step 7's duplication findings.
+- **Tickets to update**, per subtask: every finding labelled "override, issue needs updating" in
+  its `### Review` sections, latest round wins, plus each Known defect the user accepted. Write
+  them as the ticket lines that change ("Rows are sorted by due date" → "New rows keep the order
+  they were added; saved rows sort by due date"), ready to apply. Offer to update the tickets;
+  don't update them without a yes.
 - **Decisions** the agents made, gathered from their reports in Chose / Why / Impact form. Lead
   with the ones whose impact reaches beyond their own subtask.
 - **Merges** you resolved while building bases, and how.
