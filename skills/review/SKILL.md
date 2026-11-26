@@ -79,7 +79,7 @@ Every prompt must end with: _"Do not invoke `/review` or spawn additional agents
 - The diff command and commit list.
 - The path or fetched contents of the spec.
 - Any overrides the caller passed (decisions that changed the spec). Report each difference from the spec text anyway, labelled "override, issue needs updating".
-- The brief: "Report: (a) requirements the spec asked for that are missing or partial; (b) behaviour in the diff that wasn't asked for (scope creep); (c) requirements that look implemented but where the implementation looks wrong. Quote the spec line for each finding. Under 400 words."
+- The brief: "Report: (a) requirements the spec asked for that are missing or partial; (b) behaviour in the diff that wasn't asked for (scope creep); (c) requirements that look implemented but where the implementation looks wrong; (d) requirements no test pins. For each 'done when' line, or each requirement when there is no such list, name the test that would go red if the behaviour were removed or reversed. Report the requirement as 'untested' when no test would, for example when every test picks rows by position so a reversed order still passes. Quote the spec line for each finding. Under 400 words."
 
 **Behaviour sub-agent prompt** — include:
 
@@ -120,7 +120,7 @@ Only when step 2 found a run file. Add a `### Review` section under the subtask'
 
 - `kind`: seam or behaviour, from the plan
 - Counts, each finding counted once:
-  - **bugs**: Spec missing or wrong findings, and Behaviour findings labelled "breaks a planned answer"
+  - **bugs**: Spec missing, wrong or untested findings, and Behaviour findings labelled "breaks a planned answer"
   - **wrong plan answers**: Behaviour findings labelled "plan answered wrongly or missed it"
   - **standards**: Standards and Static analysis findings
 - Each finding in one line, with what it should feed: the checklist (which item), a coding standard, or an automated check
