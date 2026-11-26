@@ -4,6 +4,8 @@ One list, read by two skills at two times:
 
 - **`/change-plan`** answers each item per subtask, before code exists: one line, or "doesn't
   apply". An item it can't answer becomes a product call (questions file) or a task in a subtask.
+  A removal still answers (a), (e) and (l) one by one. "Removal, so (b) to (k) don't apply" is not
+  an answer: the people who lose the removed behaviour are part of the change.
 - **`/review`**'s Behaviour axis checks the code against each item, and against the plan's answer
   when there is one.
 
@@ -18,11 +20,15 @@ usually a sharper Plan line in this file. When it traces to nothing here, it may
 
 - **Plan:** list every entry point the subtask adds or changes, and every sibling path that does
   the same kind of thing: every sender, every close, cancel or withdraw path, every scheduler or
-  cadence that acts on the same data. Does each sibling get the change, or why not?
+  cadence that acts on the same data. Does each sibling get the change, or why not? For an action
+  the subtask guards (a disabled button, a hidden control), list every way a user can trigger it:
+  the button, Enter in a form field, a keyboard shortcut, a URL. Is each one guarded?
 - **Review:** for each entry point the diff adds or changes (server function, route handler,
   exported function), list its outcome branches (e.g. created, linked, restored, refused). Flag any
   branch that skips a step its sibling branches do: saving an answer, crediting, writing the
-  session, recording an audit.
+  session, recording an audit. For each guard the diff adds to a control (disabled, hidden), try
+  the other triggers: press Enter in a field of the same form, submit the form directly. Flag an
+  action the guard was meant to stop that still runs.
 
 ## (b) Repeats and partial failure
 
@@ -53,7 +59,9 @@ usually a sharper Plan line in this file. When it traces to nothing here, it may
 ## (e) Who can reach it
 
 - **Plan:** for each new or moved write, which identities can reach it before and after? Is any
-  identity new?
+  identity new? For each read that starts returning a new field (a count, a name, a date), which
+  permissions can call that read? A read shared by two permissions gives the new field to both,
+  even when only one screen shows it.
 - **Review:** for each write the diff adds, or moves to a different auth guard or helper, read that
   guard's body even when the diff doesn't touch it. List which identities could reach the write
   before the change and which can after. Flag any identity that is new. Then ask:
@@ -63,6 +71,10 @@ usually a sharper Plan line in this file. When it traces to nothing here, it may
     passes when the parameter is missing fails open.
 
   Flag a write that stores data against a different user than the one who loaded the page.
+
+  For each read whose result gains a field, read its permission check and list every permission
+  that passes it. Flag a new field returned to a permission whose screens never show it, such as a
+  staff name or a tenant-wide count reaching a caller who only needed the read for another page.
 
 ## (f) Pages open across a deploy
 
@@ -123,5 +135,13 @@ usually a sharper Plan line in this file. When it traces to nothing here, it may
 
 - **Plan:** list every caller of the changed function and every screen, email and SMS that shows
   the changed thing. Is each one still right (labels, wording, timing, one-time versus ongoing)?
+  When the subtask removes or replaces a behaviour, name who loses it. If the replacement only runs
+  behind a flag, for some tenants or for some roles, what happens to everyone outside it? When the
+  subtask renames a thing, list the old name's uses across the whole repo: code, comments, docs,
+  the glossary, not only the files in the subtask.
 - **Review:** grep every caller of each changed function and every place that shows the changed
   value. Flag a caller or screen that now shows the wrong thing or still follows the old rule.
+  For a removal or replacement, read the replacement's gate (flag, tenant setting, role) and flag
+  any user who had the old behaviour and gets neither. For a rename, grep the old name across the
+  whole repo, including comments and docs in files the diff doesn't touch, and flag every use that
+  now names something that no longer exists.
