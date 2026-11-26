@@ -262,9 +262,21 @@ From the reports that come back:
   or wrong against what was asked for), any Behaviour finding, and any **High**-confidence
   brittle-tests finding — an unambiguous instance, not a judgement call.
 - **Decide**: baseline-smell findings, any Standards finding that isn't a hard violation, and
-  any **Medium**/**Low**-confidence brittle-tests finding. For each, choose: fix it now if it's
-  cheap and inside step 5's scope, or leave it. Either way, record it in the report as a decision
-  (see Report below), not as an open question.
+  any **Medium**/**Low**-confidence brittle-tests finding. Fix it by default. Leave it only with a
+  reason a reviewer would accept: the fix belongs to a named later ticket, or it would touch code
+  another open subtask is changing. "Acceptable", "minor" or "a follow-up moves it" is not a
+  reason. Record each in the report as a decision (see Report below), not as an open question,
+  and list every finding you left in the PR description under **Left, with reason** (step 10), so
+  the human reviewers see it before they find it again.
+
+A review finding is not fixed until the reviewer's scenario no longer happens:
+
+- A fix that turns an error into a silent no-op (the bad input is kept, ignored or replaced
+  without telling the caller) is not a fix. Refuse the input where the rule lives instead.
+- A claim the review marked "unverified" (a count, a "this never runs") gets checked by running
+  it before the PR opens, and the checked figure goes in the code, commit or PR description.
+- Docs, comments and test names the review names as stale get fixed in this branch, including
+  files the diff doesn't touch.
 
 **A finding a reviewer reports as wrong is a defect, not a decision.** Before you treat one as a
 defect, check it against what is already settled: the issue, its parent ticket, the plan, the
@@ -327,7 +339,9 @@ When the suite, lint and typecheck pass and step 8 is done, follow
 (seam commits are already in), using `CONTRIBUTING.md`'s format, on the subtask's branch (create
 it per `CONTRIBUTING.md` if you're on the base branch), push, and open a **draft** PR with no
 reviewers through `/pr-description`. It captures the evidence from the plan's shot list. Tell it
-the PR is a draft opened by `/implement`, so it doesn't stop to ask.
+the PR is a draft opened by `/implement`, so it doesn't stop to ask. Pass it step 8's
+**Left, with reason** list, and have it added after the Summary, one line per finding with its
+reason. Omit the section when nothing was left.
 
 When a caller (such as `/fleet-command`) names the branch and the PR base, use those.
 

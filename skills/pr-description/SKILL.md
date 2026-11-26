@@ -92,9 +92,10 @@ option.
   mention a ticket-prefixed format yet, use the pattern anyway and tell the user
   `CONTRIBUTING.md` is missing it — don't silently improvise a different one next time.
   Without an issue key, just the short summary.
-- **Body**: a Summary of 2-4 bullets (what and why, never a restated diff), the Evidence
-  block from step 4 if one exists, and nothing else — unless something is genuinely
-  risky (migration, flag flip, breaking change), in which case one Note bullet, no more.
+- **Body**: a Summary of 2-4 bullets (what and why, never a restated diff), the
+  **Left, with reason** list if the caller (`/implement`) passed one, the Evidence block from
+  step 4 if one exists, and nothing else — unless something is genuinely risky (migration,
+  flag flip, breaking change), in which case one Note bullet, no more.
 
 ### 6. Present, then offer to push
 

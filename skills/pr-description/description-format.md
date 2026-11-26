@@ -23,6 +23,10 @@ this repo — the pattern above is a common default, not a fixed rule.
 - <what changed, in this area, and why — one bullet per logical change>
 - <...>
 
+## Left, with reason
+
+- <only when the caller passes review findings it left unfixed: the finding, then why>
+
 ## Evidence
 
 <the markdown block ui-evidence produced, pasted in verbatim>
